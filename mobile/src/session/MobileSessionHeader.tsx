@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ChevronLeft, Folder, GitBranch, MoreHorizontal, PanelLeftOpen } from 'lucide-react-native'
 import { MobileSessionHeaderIconButton } from './MobileSessionHeaderIconButton'
 import { MobileSessionTabStrip } from './MobileSessionTabStrip'
+import { MobileSessionRepoSwitcher } from './MobileSessionRepoSwitcher'
 import { StatusDot } from '../components/StatusDot'
 import { styles } from './mobile-session-styles'
 import { useHostSidebarReveal } from '../layout/host-sidebar-reveal'
@@ -52,9 +53,7 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
         <View
           style={[styles.sessionTitleBlock, tabsInTopBar && styles.sessionTitleBlockBesideTabs]}
         >
-          <Text style={styles.sessionTitle} numberOfLines={1}>
-            {worktreeName || 'Terminal'}
-          </Text>
+          <MobileSessionRepoSwitcher controller={controller} title={worktreeName || 'Terminal'} />
           <Pressable
             style={styles.sessionMetaRow}
             disabled={!showConnectionRetry}

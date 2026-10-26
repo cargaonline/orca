@@ -15,7 +15,9 @@ import { AgentSpinner } from './AgentSpinner'
 import { HostKindIcon } from './HostKindIcon'
 import { MobileRepoIcon } from './MobileRepoIcon'
 import { WorktreeAgentList } from './WorktreeAgentList'
+import { MultiRepoMemberRows } from './MultiRepoMemberRows'
 import { WorktreeMetaGlyphs, prStateColor } from './WorktreeMetaGlyphs'
+import type { MobileMultiRepoMember } from '../worktree/multi-repo-workspace-summary'
 
 // Match desktop formatBranchName by hiding refs/heads/ prefix.
 function displayBranch(branch: string): string {
@@ -41,6 +43,11 @@ type Props = {
   statusLive?: boolean
   onLongPress?: (item: Worktree) => void
   onToggleLineage?: (item: Worktree) => void
+  multiRepoActions?: {
+    retryingMemberIds: ReadonlySet<string>
+    onOpenMember: (item: Worktree, member: MobileMultiRepoMember) => void
+    onRetryMember: (item: Worktree, member: MobileMultiRepoMember) => void
+  }
 }
 
 function WorktreeListRowComponent({
@@ -57,7 +64,8 @@ function WorktreeListRowComponent({
   onAgentPress,
   statusLive,
   onLongPress,
-  onToggleLineage
+  onToggleLineage,
+  multiRepoActions
 }: Props) {
   const isFolderWorkspace = item.workspaceKind === 'folder-workspace'
   const folderMeta = item.comment?.trim() || item.path || 'Folder'
@@ -137,7 +145,7 @@ function WorktreeListRowComponent({
               </Text>
             </View>
           )}
-          {isFolderWorkspace && (
+          {isFolderWorkspace && !item.multiRepo && (
             <View style={styles.folderBadge}>
               <Text style={styles.folderBadgeText}>Folder</Text>
             </View>
@@ -197,6 +205,14 @@ function WorktreeListRowComponent({
             isReadOnly={isReadOnly}
             onAgentPress={onAgentPress ? (paneKey) => onAgentPress(item, paneKey) : undefined}
             fullList={agentActivityDisplayMode === 'full'}
+          />
+        ) : null}
+        {item.multiRepo && multiRepoActions ? (
+          <MultiRepoMemberRows
+            summary={item.multiRepo}
+            retryingMemberIds={multiRepoActions.retryingMemberIds}
+            onOpenMember={(member) => multiRepoActions.onOpenMember(item, member)}
+            onRetryMember={(member) => multiRepoActions.onRetryMember(item, member)}
           />
         ) : null}
         {lineageChildCount > 0 && onToggleLineage ? (
