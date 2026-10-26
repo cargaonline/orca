@@ -191,20 +191,19 @@ export function createNativeChatImageOwnerSelector(tabId: string) {
 export function useNativeChatImageRuntimeContext(tabId: string): NativeChatImageRuntimeContext {
   const selectOwnerState = useMemo(() => createNativeChatImageOwnerSelector(tabId), [tabId])
   const ownerState = useAppStore(useShallow(selectOwnerState))
-  return useMemo(
-    () =>
-      resolveNativeChatImageRuntimeContextForOwner(
-        {
-          ...ownerState,
-          // This view serves only the existing floating-directory predicate, never an owner index.
-          unifiedTabsByWorktree:
-            ownerState.owner && ownerState.floatingTabs
-              ? { [ownerState.owner]: ownerState.floatingTabs }
-              : {}
-        },
-        tabId,
-        ownerState.owner
-      ),
-    [ownerState, tabId]
-  )
+  return useMemo(() => {
+    // This view serves only the existing floating-directory predicate, never an owner index.
+    const unifiedTabsByWorktree =
+      ownerState.owner && ownerState.floatingTabs
+        ? { [ownerState.owner]: ownerState.floatingTabs }
+        : {}
+    return resolveNativeChatImageRuntimeContextForOwner(
+      {
+        ...ownerState,
+        unifiedTabsByWorktree
+      },
+      tabId,
+      ownerState.owner
+    )
+  }, [ownerState, tabId])
 }
