@@ -54,6 +54,7 @@ export function useMultiRepoComposer({
   onCreated
 }: UseMultiRepoComposerInput) {
   const setups = useAppStore((state) => state.projectHostSetups)
+  const projects = useAppStore((state) => state.projects)
   const createMultiRepoWorkspace = useAppStore((state) => state.createMultiRepoWorkspace)
   const [extraProjectIds, setExtraProjectIds] = useState<string[]>([])
   const [setupOverrides, setSetupOverrides] = useState<Record<string, string | undefined>>({})
@@ -232,18 +233,24 @@ export function useMultiRepoComposer({
     stateKey
   ])
 
+  // Every selected project keeps a chip, even when the picker's options no longer list it (for
+  // example its only setup sits on a host that is offline), so a blocked count always has a chip.
   const selectedProjects = useMemo(
     () =>
-      selectedProjectIds.flatMap((projectId) => {
+      selectedProjectIds.map((projectId) => {
         const option = projectOptions.find(
           (candidate) => candidate.kind === 'project' && candidate.projectId === projectId
         )
-        return option?.kind === 'project'
-          ? [{ projectId, displayName: option.displayName, badgeColor: option.badgeColor }]
-          : []
+        const project = projects.find((candidate) => candidate.id === projectId)
+        return {
+          projectId,
+          displayName: option?.displayName ?? project?.displayName ?? projectId,
+          badgeColor: option?.badgeColor ?? project?.badgeColor ?? 'var(--muted-foreground)'
+        }
       }),
-    [projectOptions, selectedProjectIds]
+    [projectOptions, projects, selectedProjectIds]
   )
+  const creatableCount = selectedProjectIds.length - blockedCount
 
   return {
     active,
@@ -266,7 +273,8 @@ export function useMultiRepoComposer({
     mixedHostsError,
     blockedCount,
     blockedReason,
-    primaryActionLabel: getMultiRepoPrimaryActionLabel(selectedProjectIds.length, creating),
+    creatableCount,
+    primaryActionLabel: getMultiRepoPrimaryActionLabel(creatableCount, creating),
     toggleProject,
     removeProject,
     chooseSetup,

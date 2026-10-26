@@ -333,7 +333,7 @@ export default function NewWorkspaceComposerCard(
           selectedProjectName={selectedProjectName}
         />
         <NewWorkspaceComposerNameSection {...props} onNamePlainEnter={handleNamePlainEnter} />
-        {props.multiRepo?.active ? (
+        {props.multiRepo?.active && props.multiRepo.blockedCount === 0 ? (
           <p className="-mt-2 text-[11px] text-muted-foreground">
             {getMultiRepoBranchHelper(props.name, props.multiRepo.selectedProjectIds.length, 0)}
           </p>

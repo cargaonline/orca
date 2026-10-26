@@ -23,15 +23,23 @@ export function getMultiRepoCreateBlockedReason(blockedCount: number): string | 
 }
 
 export function getMultiRepoPrimaryActionLabel(projectCount: number, creating: boolean): string {
-  return creating
-    ? translate('auto.components.newWorkspace.multiRepo.creating', 'Creating…')
-    : translate(
-        'auto.components.newWorkspace.multiRepo.createInProjects',
-        'Create in {{n}} projects',
-        {
-          n: projectCount
-        }
-      )
+  if (creating) {
+    return translate('auto.components.newWorkspace.multiRepo.creating', 'Creating…')
+  }
+  // Counts only projects that can be created; a blocked selection must not promise N repos.
+  if (projectCount < 2) {
+    return translate(
+      'auto.components.NewWorkspaceComposerModal.createWorkspace',
+      'Create workspace'
+    )
+  }
+  return translate(
+    'auto.components.newWorkspace.multiRepo.createInProjects',
+    'Create in {{n}} projects',
+    {
+      n: projectCount
+    }
+  )
 }
 
 /** Helper line under the name field: the branch rule, or how many projects differ. */

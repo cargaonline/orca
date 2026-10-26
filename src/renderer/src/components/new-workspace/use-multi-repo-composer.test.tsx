@@ -103,6 +103,33 @@ describe('useMultiRepoComposer', () => {
     expect(result.current.blockedReason).toBe('Remove 1 project or switch host')
   })
 
+  it('keeps a chip for a selected project the picker no longer lists, so the blocked count matches', () => {
+    const { result } = renderHook(() =>
+      useMultiRepoComposer(
+        input({ hostId: 'runtime:a', projectOptions: [option('api'), option('web')] })
+      )
+    )
+    act(() => result.current.toggleProject('gone'))
+    expect(result.current.blockedCount).toBeGreaterThan(0)
+    expect(result.current.selectedProjects.map((project) => project.projectId)).toEqual([
+      'api',
+      'gone'
+    ])
+    expect(result.current.selectedProjects).toHaveLength(result.current.selectedProjectIds.length)
+  })
+
+  it('labels the action by the projects that can be created, not the blocked ones', () => {
+    const { result, rerender } = renderHook((props) => useMultiRepoComposer(props), {
+      initialProps: input()
+    })
+    act(() => result.current.toggleProject('web'))
+    expect(result.current.primaryActionLabel).toBe('Create in 2 projects')
+    rerender(input({ hostId: 'runtime:a' }))
+    expect(result.current.blockedCount).toBe(1)
+    expect(result.current.creatableCount).toBe(1)
+    expect(result.current.primaryActionLabel).toBe('Create workspace')
+  })
+
   it('creates with the repo ids of the resolved setups in selection order and remembers the set', async () => {
     const onCreated = vi.fn()
     create.mockResolvedValue({ id: 'folder-1' })
