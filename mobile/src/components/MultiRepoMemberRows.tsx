@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Circle, FolderTree } from 'lucide-react-native'
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  FolderTree
+} from 'lucide-react-native'
 import { colors, radii, spacing, typography } from '../theme/mobile-theme'
 import {
   isMultiRepoMemberRetryable,

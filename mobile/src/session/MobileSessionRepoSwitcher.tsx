@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Check, ChevronDown } from 'lucide-react-native'
 import { BottomDrawer } from '../components/BottomDrawer'
-import { workspaceRouteHref } from '../navigation/workspace-execution-host'
 import { colors, spacing, typography } from '../theme/mobile-theme'
 import { styles as sessionStyles } from './mobile-session-styles'
 import { useMultiRepoSessionSiblings } from './use-multi-repo-session-siblings'
-import { useWorkspaceExecutionHost } from '../navigation/workspace-execution-host'
+import {
+  useWorkspaceExecutionHost,
+  workspaceRouteHref
+} from '../navigation/workspace-execution-host'
 import type { MobileSessionController } from './use-mobile-session-controller'
 
 export function MobileSessionRepoSwitcher({

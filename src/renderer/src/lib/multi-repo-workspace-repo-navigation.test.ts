@@ -20,11 +20,22 @@ function member(id: string, state: MultiRepoMember['state']): MultiRepoMember {
 }
 
 function workspace(members: MultiRepoMember[]): FolderWorkspace {
-  // SAFETY: only fields read by repo navigation are populated.
   return {
     id: 'f1',
+    projectGroupId: 'project-1',
+    name: 'Workspace',
+    folderPath: '/workspace/f1',
+    linkedTask: null,
+    comment: '',
+    isArchived: false,
+    isUnread: false,
+    isPinned: false,
+    sortOrder: 0,
+    lastActivityAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
     multiRepo: { version: 1, executionHostId: 'local', rootOwnedByOrca: true, members }
-  } as unknown as FolderWorkspace
+  }
 }
 
 const folderWorkspaces = [

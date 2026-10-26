@@ -1,7 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import {
-  rpcClientForExecutionHost
-} from '../transport/execution-host-scoped-rpc-client'
+import { rpcClientForExecutionHost } from '../transport/execution-host-scoped-rpc-client'
 import type { RpcClient } from '../transport/rpc-client'
 import { multiRepoRetryMember } from '../worktree/multi-repo-workspace-operations'
 import {
@@ -53,9 +51,7 @@ export function useMultiRepoWorkspaceActions({
         )
         multiRepoRetryMember.interpret(reply)
       } catch (error) {
-        reportError(
-          error instanceof Error ? error.message : `Could not retry ${member.dirName}`
-        )
+        reportError(error instanceof Error ? error.message : `Could not retry ${member.dirName}`)
       } finally {
         setRetryingMemberIds((prev) => {
           const next = new Set(prev)

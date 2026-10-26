@@ -35,7 +35,9 @@ export function summarizeMultiRepoWorkspace(
   }
 }
 
-export function multiRepoChipText(members: readonly Pick<MobileMultiRepoMember, 'state'>[]): string {
+export function multiRepoChipText(
+  members: readonly Pick<MobileMultiRepoMember, 'state'>[]
+): string {
   const count = (state: MultiRepoMemberState): number =>
     members.filter((member) => member.state === state).length
   const pending = count('queued') + count('creating')

@@ -3,6 +3,7 @@ import type { WorkspaceRepoSelection } from '../../../shared/window-shortcut-pol
 import { folderWorkspaceKey } from '../../../shared/workspace-scope'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 import { activateAndRevealWorkspace } from '@/lib/worktree-activation'
 
 type RepoNavigationState = Pick<AppState, 'folderWorkspaces' | 'activeWorktreeId'>
@@ -28,7 +29,7 @@ export function resolveWorkspaceRepoTarget(
   if (!activeWorktreeId) {
     return null
   }
-  for (const folderWorkspace of state.folderWorkspaces) {
+  for (const folderWorkspace of selectFolderWorkspaces(state)) {
     if (!folderWorkspace.multiRepo) {
       continue
     }

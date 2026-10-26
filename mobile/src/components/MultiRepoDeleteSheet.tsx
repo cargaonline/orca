@@ -3,7 +3,10 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { colors, spacing, typography } from '../theme/mobile-theme'
 import type { RpcClient } from '../transport/rpc-client'
 import { hostScreenStyles as styles } from '../host-screen/host-screen-styles'
-import { multiRepoDelete, multiRepoInspectDelete } from '../worktree/multi-repo-workspace-operations'
+import {
+  multiRepoDelete,
+  multiRepoInspectDelete
+} from '../worktree/multi-repo-workspace-operations'
 import type {
   MultiRepoDeleteInspectionReply,
   MultiRepoDeleteResultReply
@@ -108,8 +111,7 @@ export function MultiRepoDeleteSheet({
     [client, folderWorkspaceId]
   )
 
-  const nameOf = (memberId: string, repoId: string): string =>
-    memberNames.get(memberId) ?? repoId
+  const nameOf = (memberId: string, repoId: string): string => memberNames.get(memberId) ?? repoId
 
   const body = (() => {
     switch (phase.kind) {
@@ -186,7 +188,9 @@ export function MultiRepoDeleteSheet({
           <View>
             <View style={styles.confirmContent}>
               <Text style={styles.confirmTitle}>
-                {result.workspaceRemoved ? `${workspaceName} deleted` : `${workspaceName} not fully deleted`}
+                {result.workspaceRemoved
+                  ? `${workspaceName} deleted`
+                  : `${workspaceName} not fully deleted`}
               </Text>
               {result.members.map((member) => (
                 <View key={member.memberId} style={localStyles.row}>
@@ -198,10 +202,7 @@ export function MultiRepoDeleteSheet({
                     )}
                   </Text>
                   <Text
-                    style={[
-                      localStyles.rowStatus,
-                      member.status === 'failed' && localStyles.risky
-                    ]}
+                    style={[localStyles.rowStatus, member.status === 'failed' && localStyles.risky]}
                   >
                     {multiRepoDeleteOutcomeText(member)}
                   </Text>
