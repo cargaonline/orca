@@ -204,11 +204,8 @@ export abstract class OrcaRuntimeWithActivateManagedWorktree extends OrcaRuntime
     workspaceLineage: WorkspaceLineage | null
     warnings: WorktreeLineageWarning[]
   } {
-    return recordCreatedWorktreeLineageState(
-      this.store,
-      worktree,
-      withoutMultiRepoParent(this.store, lineageResolution)
-    )
+    const resolution = withoutMultiRepoParent(this.store, lineageResolution)
+    return recordCreatedWorktreeLineageState(this.store, worktree, resolution)
   }
 
   protected pasteStartupDraftWhenReady(handle: string, draft: WorktreeStartupDraftPaste): void {

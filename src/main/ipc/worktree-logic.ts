@@ -101,17 +101,6 @@ export async function computeWorktreePathAsync(
   )
 }
 
-/** Exact path for a multi-repo member; the caller still bounds it with ensurePathWithinWorkspace. */
-export function computePlacedWorktreePath(
-  placement: { parentDir: string; leafName: string },
-  workspaceRoot: string
-): string {
-  return getRuntimePathOps(placement.parentDir, workspaceRoot).join(
-    placement.parentDir,
-    placement.leafName
-  )
-}
-
 /** Async WSL home probes avoid blocking main; synchronous callers retain the matching resolver below. */
 export async function computeWorkspaceRootAsync(
   repoPath: string,
@@ -236,7 +225,7 @@ export function hasRepoWorktreeBasePath(repo: Pick<Repo, 'worktreeBasePath'>): b
   return getRepoWorktreeBasePath(repo) !== undefined
 }
 
-function getRuntimePathOps(
+export function getRuntimePathOps(
   repoPath: string,
   workspaceDir: string
 ): Pick<typeof posix, 'basename' | 'isAbsolute' | 'join' | 'normalize'> {

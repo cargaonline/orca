@@ -1,47 +1,45 @@
 import { randomUUID } from 'node:crypto'
-import { access, rmdir } from 'node:fs/promises'
-import { isAbsolute, join } from 'node:path'
+import { rmdir } from 'node:fs/promises'
+import { isAbsolute } from 'node:path'
 import type { FolderWorkspace } from '../../../shared/folder-workspace-types'
-import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
 import {
-  MULTI_REPO_SYSTEM_GROUP_NAME,
   MULTI_REPO_WORKSPACE_CREATE_CONCURRENCY,
-  MULTI_REPO_WORKSPACE_MAX_MEMBERS,
-  MULTI_REPO_WORKSPACE_MIN_MEMBERS,
   MultiRepoWorkspaceError,
-  isMultiRepoWorkspaceSettled,
   type MultiRepoDeleteInspection,
   type MultiRepoDeleteResult,
   type MultiRepoMember,
   type MultiRepoWorkspace
 } from '../../../shared/multi-repo-workspace'
-import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
-import { isFolderRepo } from '../../../shared/repo-kind'
-import { isWslUncPath } from '../../../shared/wsl-paths'
-import { folderWorkspaceKey } from '../../../shared/workspace-scope'
-import type { Repo } from '../../../shared/repo-types'
 import type { WorkspaceCreatorProvenance } from '../../../shared/worktree/types'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import { sanitizeWorktreeName } from '../../ipc/worktree-logic'
 import { track } from '../../telemetry/client'
-import { worktreeRowTarget } from '../../persistence/host-qualified-worktree-meta'
-import { recordCreatedWorktreeLineage } from '../runtime-worktree-lineage-recording'
 import {
   deleteMultiRepoWorkspace,
   inspectMultiRepoDelete,
   type MultiRepoDeleteRequest
 } from './multi-repo-workspace-delete'
-import { PlacedWorktreePathOccupiedError } from './placed-worktree-path-occupied-error'
 import { classifyMultiRepoMemberFailure } from './multi-repo-member-failure'
 import { allocateMemberDirNames, allocateMultiRepoRoot } from './multi-repo-root-allocation'
 import type { MultiRepoWorkspacePort } from './multi-repo-workspace-port'
 import {
   patchMultiRepoMember,
   requireMultiRepoMember,
-  requireMultiRepoWorkspace,
-  writeMultiRepoRecord
+  requireMultiRepoWorkspace
 } from './multi-repo-workspace-record'
-import { bucketMultiRepoMemberCount } from '../../../shared/telemetry-multi-repo-workspace-event-schemas'
+
+import {
+  removeMultiRepoMember,
+  detachMultiRepoMember,
+  attachMultiRepoMember
+} from './multi-repo-member-actions'
+import { recordMultiRepoMemberLineage, tryAdoptMultiRepoMember } from './multi-repo-member-adoption'
+import {
+  ensureMultiRepoSystemGroup,
+  reportMultiRepoCreated,
+  validateMultiRepoRepos
+} from './multi-repo-create-support'
 
 export type MultiRepoWorkspaceCreateInput = {
   name: string
@@ -100,70 +98,16 @@ export class MultiRepoWorkspaceService {
     return requireMultiRepoWorkspace(store, folderWorkspaceId)
   }
 
-  async removeMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
-    const store = this.port.requireStore()
-    const member = requireMultiRepoMember(
-      requireMultiRepoWorkspace(store, folderWorkspaceId).multiRepo,
-      memberId
-    )
-    if (member.state !== 'failed' && member.state !== 'interrupted') {
-      throw new MultiRepoWorkspaceError(
-        'multi_repo_member_not_removable',
-        'Only failed or interrupted members can be removed. Nothing on disk is deleted.'
-      )
-    }
-    const updated = writeMultiRepoRecord(store, folderWorkspaceId, (current) => ({
-      ...current,
-      members: current.members.filter((entry) => entry.memberId !== memberId)
-    }))
-    this.port.notifyChanged()
-    return updated ?? requireMultiRepoWorkspace(store, folderWorkspaceId)
+  removeMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
+    return removeMultiRepoMember(this.port, folderWorkspaceId, memberId)
   }
 
-  async detachMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
-    const store = this.port.requireStore()
-    const workspace = requireMultiRepoWorkspace(store, folderWorkspaceId)
-    const member = requireMultiRepoMember(workspace.multiRepo, memberId)
-    if (member.state !== 'ready' || !member.worktreeId) {
-      throw new MultiRepoWorkspaceError(
-        'multi_repo_member_not_detachable',
-        'Only a ready member can be removed from the workspace.'
-      )
-    }
-    const target = worktreeRowTarget(store, { id: member.worktreeId })
-    if (target) {
-      store.removeWorktreeLineage?.(target)
-    }
-    const updated = writeMultiRepoRecord(store, folderWorkspaceId, (current) => ({
-      ...current,
-      members: current.members.filter((entry) => entry.memberId !== memberId),
-      detachedMembers: [...(current.detachedMembers ?? []), member]
-    }))
-    this.port.notifyChanged()
-    return updated ?? requireMultiRepoWorkspace(store, folderWorkspaceId)
+  detachMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
+    return detachMultiRepoMember(this.port, folderWorkspaceId, memberId)
   }
 
-  async attachMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
-    const store = this.port.requireStore()
-    const workspace = requireMultiRepoWorkspace(store, folderWorkspaceId)
-    const member = workspace.multiRepo.detachedMembers?.find((entry) => entry.memberId === memberId)
-    const worktreeId = member?.worktreeId
-    if (!member || !worktreeId || !store.getWorktreeMeta(worktreeId)) {
-      throw new MultiRepoWorkspaceError(
-        'multi_repo_member_not_attachable',
-        'This workspace cannot be restored; its worktree no longer exists.'
-      )
-    }
-    this.recordMemberLineage(workspace, worktreeId, member.worktreeInstanceId)
-    const updated = writeMultiRepoRecord(store, folderWorkspaceId, (current) => ({
-      ...current,
-      members: [...current.members, member],
-      detachedMembers: (current.detachedMembers ?? []).filter(
-        (entry) => entry.memberId !== memberId
-      )
-    }))
-    this.port.notifyChanged()
-    return updated ?? requireMultiRepoWorkspace(store, folderWorkspaceId)
+  attachMember(folderWorkspaceId: string, memberId: string): Promise<FolderWorkspace> {
+    return attachMultiRepoMember(this.port, folderWorkspaceId, memberId)
   }
 
   inspectDelete(folderWorkspaceId: string): Promise<MultiRepoDeleteInspection> {
@@ -178,7 +122,10 @@ export class MultiRepoWorkspaceService {
 
   private async createOnce(input: MultiRepoWorkspaceCreateInput): Promise<FolderWorkspace> {
     const store = this.port.requireStore()
-    const repos = this.validateRepos(input.members.map((member) => member.repoId))
+    const repos = validateMultiRepoRepos(
+      this.port,
+      input.members.map((member) => member.repoId)
+    )
     const workspaceDir = store.getSettings().workspaceDir
     if (!isAbsolute(workspaceDir)) {
       throw new MultiRepoWorkspaceError(
@@ -186,7 +133,7 @@ export class MultiRepoWorkspaceService {
         'Set an absolute workspace directory in Settings first.'
       )
     }
-    const group = await this.ensureSystemGroup(workspaceDir)
+    const group = await ensureMultiRepoSystemGroup(this.port, workspaceDir)
     const rootPath = await allocateMultiRepoRoot(workspaceDir, input.name)
     let workspace: FolderWorkspace
     try {
@@ -242,82 +189,6 @@ export class MultiRepoWorkspaceService {
     return stored
   }
 
-  private validateRepos(repoIds: readonly string[]): Repo[] {
-    if (
-      repoIds.length < MULTI_REPO_WORKSPACE_MIN_MEMBERS ||
-      repoIds.length > MULTI_REPO_WORKSPACE_MAX_MEMBERS ||
-      new Set(repoIds).size !== repoIds.length
-    ) {
-      throw new MultiRepoWorkspaceError(
-        'multi_repo_invalid_members',
-        'Pick between 2 and 12 different projects.'
-      )
-    }
-    const all = this.port.requireStore().getRepos()
-    return repoIds.map((repoId) => {
-      const repo = all.find((entry) => entry.id === repoId)
-      if (!repo) {
-        throw new MultiRepoWorkspaceError('multi_repo_repo_not_found', 'Project was not found.', {
-          repoId
-        })
-      }
-      if (isFolderRepo(repo)) {
-        throw new MultiRepoWorkspaceError(
-          'multi_repo_repo_not_git',
-          'Folder projects cannot join.',
-          {
-            repoId
-          }
-        )
-      }
-      if (repo.connectionId || getRepoExecutionHostId(repo).startsWith('ssh:')) {
-        throw new MultiRepoWorkspaceError(
-          'multi_repo_repo_direct_ssh',
-          'Direct SSH projects cannot join a multi-repo workspace.',
-          { repoId }
-        )
-      }
-      if (getRepoExecutionHostId(repo) !== LOCAL_EXECUTION_HOST_ID) {
-        throw new MultiRepoWorkspaceError(
-          'multi_repo_mixed_hosts',
-          'All projects must live on this host.',
-          { repoId }
-        )
-      }
-      if (isWslUncPath(repo.path)) {
-        throw new MultiRepoWorkspaceError(
-          'multi_repo_repo_wsl',
-          'WSL projects cannot join a multi-repo workspace yet.',
-          { repoId }
-        )
-      }
-      return repo
-    })
-  }
-
-  private async ensureSystemGroup(workspaceDir: string): Promise<{ id: string }> {
-    const existing = this.port
-      .requireStore()
-      .getProjectGroups?.()
-      .find(
-        (group) =>
-          group.name === MULTI_REPO_SYSTEM_GROUP_NAME &&
-          !group.connectionId &&
-          group.parentPath !== null &&
-          group.parentPath !== undefined &&
-          normalizeRuntimePathForComparison(group.parentPath) ===
-            normalizeRuntimePathForComparison(workspaceDir)
-      )
-    return (
-      existing ??
-      (await this.port.createProjectGroup({
-        name: MULTI_REPO_SYSTEM_GROUP_NAME,
-        parentPath: workspaceDir,
-        createdFrom: 'manual'
-      }))
-    )
-  }
-
   private async runMembers(
     folderWorkspaceId: string,
     memberIds: readonly string[],
@@ -336,7 +207,7 @@ export class MultiRepoWorkspaceService {
       )
     )
     if (options.startedAt !== undefined) {
-      this.reportCreated(folderWorkspaceId, options.startedAt)
+      reportMultiRepoCreated(this.port, folderWorkspaceId, options.startedAt)
     }
   }
 
@@ -356,7 +227,8 @@ export class MultiRepoWorkspaceService {
         attempts: current.attempts + 1
       }))
       this.port.notifyChanged()
-      const adopted = member.attempts > 0 ? await this.tryAdopt(workspace, member) : null
+      const adopted =
+        member.attempts > 0 ? await tryAdoptMultiRepoMember(this.port, workspace, member) : null
       if (adopted) {
         this.markReady(folderWorkspaceId, memberId, adopted)
       } else {
@@ -370,7 +242,12 @@ export class MultiRepoWorkspaceService {
           activate: false,
           ...(workspace.creatorProvenance ? { creatorProvenance: workspace.creatorProvenance } : {})
         })
-        this.recordMemberLineage(workspace, result.worktree.id, result.worktree.instanceId)
+        recordMultiRepoMemberLineage(
+          this.port,
+          workspace,
+          result.worktree.id,
+          result.worktree.instanceId
+        )
         this.markReady(folderWorkspaceId, memberId, {
           worktreeId: result.worktree.id,
           instanceId: result.worktree.instanceId,
@@ -409,83 +286,5 @@ export class MultiRepoWorkspaceService {
       ...(created.instanceId ? { worktreeInstanceId: created.instanceId } : {}),
       ...(created.branch ? { branchName: created.branch.replace(/^refs\/heads\//, '') } : {})
     }))
-  }
-
-  /** Idempotent retry: adopt a worktree already registered at the expected path, never delete anything. */
-  private async tryAdopt(
-    workspace: FolderWorkspace & { multiRepo: MultiRepoWorkspace },
-    member: MultiRepoMember
-  ): Promise<{ worktreeId: string; instanceId?: string; branch: string } | null> {
-    const expected = normalizeRuntimePathForComparison(join(workspace.folderPath, member.dirName))
-    const detected = await this.port.listDetectedWorktrees(member.repoId).catch(() => null)
-    const match = detected?.worktrees.find(
-      (entry) => normalizeRuntimePathForComparison(entry.path) === expected
-    )
-    if (!match) {
-      if (await pathExists(join(workspace.folderPath, member.dirName))) {
-        throw new PlacedWorktreePathOccupiedError(join(workspace.folderPath, member.dirName))
-      }
-      return null
-    }
-    const branch = match.branch.replace(/^refs\/heads\//, '')
-    if (match.repoId !== member.repoId || (member.branchExplicit && branch !== member.branchName)) {
-      throw new PlacedWorktreePathOccupiedError(match.path)
-    }
-    const store = this.port.requireStore()
-    const target = worktreeRowTarget(store, { id: match.id, hostId: match.hostId })
-    const meta = target ? store.setWorktreeMeta(target, {}) : undefined
-    const instanceId = meta?.instanceId ?? match.instanceId
-    this.recordMemberLineage(workspace, match.id, instanceId)
-    return { worktreeId: match.id, instanceId, branch }
-  }
-
-  private recordMemberLineage(
-    workspace: FolderWorkspace,
-    worktreeId: string,
-    instanceId: string | undefined
-  ): void {
-    const store = this.port.requireStore()
-    recordCreatedWorktreeLineage(
-      store,
-      { id: worktreeId, instanceId, hostId: undefined },
-      {
-        kind: 'lineage',
-        parent: {
-          type: 'folder',
-          workspaceKey: folderWorkspaceKey(workspace.id),
-          folderWorkspace: workspace,
-          instanceId: null
-        },
-        origin: 'cli',
-        capture: { source: 'explicit-cli-flag', confidence: 'explicit' }
-      }
-    )
-  }
-
-  private reportCreated(folderWorkspaceId: string, startedAt: number): void {
-    const workspace = this.port
-      .requireStore()
-      .getFolderWorkspaces?.()
-      .find((entry) => entry.id === folderWorkspaceId)
-    const multiRepo = workspace?.multiRepo
-    if (!multiRepo || !isMultiRepoWorkspaceSettled(multiRepo)) {
-      return
-    }
-    track('multi_repo_workspace_created', {
-      member_count_bucket: bucketMultiRepoMemberCount(multiRepo.members.length),
-      ready_count: multiRepo.members.filter((member) => member.state === 'ready').length,
-      failed_count: multiRepo.members.filter((member) => member.state === 'failed').length,
-      total_duration_ms: Date.now() - startedAt,
-      execution_host: 'local'
-    })
-  }
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await access(path)
-    return true
-  } catch {
-    return false
   }
 }

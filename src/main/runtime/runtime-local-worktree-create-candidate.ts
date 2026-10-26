@@ -4,12 +4,12 @@ import { WorktreeCreateCollisionError } from '../../shared/new-workspace/worktre
 import type { CreateWorktreeArgs } from '../../shared/worktree/create-types'
 import type { getPRForBranch } from '../github/client'
 import {
-  computePlacedWorktreePath,
   computeWorktreePath,
   ensurePathWithinWorkspace,
   sanitizeWorktreeName,
   type getWorktreePathSettings
 } from '../ipc/worktree-logic'
+import { computePlacedWorktreePath } from '../ipc/worktree-placed-path'
 import { resolveWorktreeCreateDisplayNameRequest } from '../ipc/worktree-display-name'
 import { getBranchConflictKind } from '../git/repo'
 import {
