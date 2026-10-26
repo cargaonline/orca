@@ -9,198 +9,22 @@ import {
   GitBranch,
   Loader2,
   Plus,
-  RotateCw,
-  X
+  RotateCw
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
 import { cn } from '@/lib/utils'
 import { defineFixture } from '../../component-fixtures/component-fixture'
+import { ComposerShell, RepoDot, REPOS } from './multi-repo-ux-fixture-parts'
 
 type RepoRowState = 'ready' | 'creating' | 'queued' | 'failed'
 
-function RepoDot({ color }: { color: string }): React.JSX.Element {
-  return <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
-}
-
-const REPOS = [
-  { name: 'api', color: '#4f8cff' },
-  { name: 'web', color: '#e0a030' },
-  { name: 'infra', color: '#4fb286' }
-]
-
-function ComposerShell({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="w-full rounded-xl border border-border bg-card p-5 shadow-floating">
-      {children}
-    </div>
-  )
-}
-
-function ProjectChips({ withLast }: { withLast?: boolean }): React.JSX.Element {
-  return (
-    <div className="space-y-2">
-      <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Projects
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {REPOS.map((repo) => (
-          <span
-            key={repo.name}
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background pl-2 pr-1 text-sm"
-          >
-            <RepoDot color={repo.color} />
-            {repo.name}
-            <Button variant="ghost" size="icon-xs" aria-label={`Remove ${repo.name}`}>
-              <X />
-            </Button>
-          </span>
-        ))}
-        <Button variant="outline" size="sm" className="h-7">
-          <Plus /> Add project
-        </Button>
-      </div>
-      {withLast ? (
-        <div className="text-xs text-muted-foreground">
-          Same as last time: <span className="text-foreground">api, web, infra</span>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function CreateBody({ advanced }: { advanced: boolean }): React.JSX.Element {
-  return (
-    <ComposerShell>
-      <div className="mb-4 text-base font-semibold">New workspace</div>
-      <div className="space-y-4">
-        <ProjectChips withLast />
-        <div className="space-y-1.5">
-          <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Name
-          </div>
-          <Input defaultValue="checkout-flow" aria-label="Workspace name" />
-          <div className="text-xs text-muted-foreground">
-            Branch <span className="font-mono">checkout-flow</span> in all 3 projects
-          </div>
-        </div>
-        <button
-          type="button"
-          className="flex items-center gap-1 text-xs font-medium text-muted-foreground"
-          aria-expanded={advanced}
-        >
-          {advanced ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-          Advanced
-        </button>
-        {advanced ? (
-          <div className="overflow-hidden rounded-md border border-border text-sm">
-            <div className="grid grid-cols-[88px_1fr_1fr] gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <span>Project</span>
-              <span>Branch</span>
-              <span>Start from</span>
-            </div>
-            {[
-              { n: 'api', c: '#4f8cff', b: 'checkout-flow', s: 'origin/main', err: null },
-              {
-                n: 'web',
-                c: '#e0a030',
-                b: 'checkout-flow-web',
-                s: 'origin/develop',
-                err: null
-              },
-              {
-                n: 'infra',
-                c: '#4fb286',
-                b: 'checkout-flow',
-                s: 'origin/main',
-                err: 'Branch already exists in infra'
-              }
-            ].map((row) => (
-              <div
-                key={row.n}
-                className="grid grid-cols-[88px_1fr_1fr] items-start gap-2 border-b border-border px-3 py-2 last:border-b-0"
-              >
-                <span className="flex h-8 items-center gap-1.5">
-                  <RepoDot color={row.c} />
-                  {row.n}
-                </span>
-                <div className="space-y-1">
-                  <Input
-                    defaultValue={row.b}
-                    className="h-8 font-mono text-xs"
-                    aria-invalid={row.err ? true : undefined}
-                    aria-label={`Branch in ${row.n}`}
-                  />
-                  {row.err ? <div className="text-xs text-destructive">{row.err}</div> : null}
-                </div>
-                <Button variant="outline" size="sm" className="justify-between font-mono text-xs">
-                  {row.s}
-                  <ChevronDown />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      <div className="mt-5 flex items-center justify-end gap-2">
-        <Button variant="ghost">Cancel</Button>
-        <Button disabled={advanced}>
-          Create in 3 projects
-          <ShortcutKeyCombo keys={['⌘', '↵']} keyCapClassName="" />
-        </Button>
-      </div>
-    </ComposerShell>
-  )
-}
-
-export const createDialog = defineFixture({
-  width: 520,
-  render: () => <CreateBody advanced={false} />
-})
-
-export const createDialogAdvancedWithConflict = defineFixture({
-  width: 560,
-  render: () => <CreateBody advanced />
-})
-
-export const createDialogDisabledProjects = defineFixture({
-  width: 380,
-  render: () => (
-    <div className="w-full rounded-md border border-border bg-popover p-1 text-sm shadow-floating">
-      <div className="px-2 py-1.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Add project
-      </div>
-      {[
-        { n: 'web', note: null, on: true, checked: true },
-        { n: 'infra', note: null, on: true, checked: false },
-        { n: 'billing-svc', note: 'On ssh: build-box. A workspace folder cannot span hosts.', on: false, checked: false },
-        { n: 'notes', note: 'Folder project, no git worktrees.', on: false, checked: false }
-      ].map((row) => (
-        <div
-          key={row.n}
-          aria-disabled={!row.on}
-          className={cn(
-            'flex items-start gap-2 rounded-sm px-2 py-1.5',
-            row.on ? 'hover:bg-accent' : 'opacity-60'
-          )}
-        >
-          <Checkbox checked={row.checked} disabled={!row.on} className="mt-0.5" />
-          <div className="min-w-0">
-            <div>{row.n}</div>
-            {row.note ? <div className="text-xs text-muted-foreground">{row.note}</div> : null}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-})
-
 function StatusGlyph({ state }: { state: RepoRowState }): React.JSX.Element {
   if (state === 'creating') {
-    return <Loader2 className="size-3.5 animate-spin text-muted-foreground motion-reduce:animate-none" />
+    return (
+      <Loader2 className="size-3.5 animate-spin text-muted-foreground motion-reduce:animate-none" />
+    )
   }
   if (state === 'ready') {
     return <Check className="size-3.5 text-muted-foreground" />
@@ -309,7 +133,13 @@ export const sidebarReadyCollapsedAndExpanded = defineFixture({
         </Button>
       </div>
       <GroupHeader name="checkout-flow" chip="3 repos" />
-      <ChildRow repo={REPOS[0]} state="ready" detail="checkout-flow · +2" dirty="3 changed" active />
+      <ChildRow
+        repo={REPOS[0]}
+        state="ready"
+        detail="checkout-flow · +2"
+        dirty="3 changed"
+        active
+      />
       <ChildRow repo={REPOS[1]} state="ready" detail="checkout-flow · clean" />
       <ChildRow repo={REPOS[2]} state="ready" detail="checkout-flow · 1 unpushed" />
       <div className="mt-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] hover:bg-sidebar-accent">
@@ -339,7 +169,6 @@ export const siblingSwitcherStrip = defineFixture({
             variant={i === 1 ? 'secondary' : 'ghost'}
             size="xs"
             aria-current={i === 1 ? 'page' : undefined}
-            className="gap-1.5"
           >
             {i > 0 ? <RepoDot color={REPOS[i - 1].color} /> : null}
             {item.name}
@@ -406,15 +235,15 @@ export const deleteConfirmPartialFailure = defineFixture({
             <RepoDot color={row.r.color} />
             <div className="min-w-0 flex-1">
               <div className="font-medium">
-                {row.r.name} <span className="font-mono text-xs text-muted-foreground">checkout-flow</span>
+                {row.r.name}{' '}
+                <span className="font-mono text-xs text-muted-foreground">checkout-flow</span>
               </div>
               <div
-                className={cn(
-                  'text-xs',
-                  row.warn ? 'text-foreground' : 'text-muted-foreground'
-                )}
+                className={cn('text-xs', row.warn ? 'text-foreground' : 'text-muted-foreground')}
               >
-                {row.st === 'failed' ? 'Could not remove: files in use. Close terminals and retry.' : row.note}
+                {row.st === 'failed'
+                  ? 'Could not remove: files in use. Close terminals and retry.'
+                  : row.note}
               </div>
             </div>
             {row.st === 'done' ? (
