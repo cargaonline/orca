@@ -18,6 +18,7 @@ import {
   captureWorkspaceChatDraftKeys,
   deleteWorkspaceChatDrafts
 } from '../worktrees/teardown/removed-worktree-chat-drafts'
+import { selectFolderWorkspaces } from '../../workspace-record-selectors'
 import type { MultiRepoWorkspaceSlice } from './multi-repo-workspace-contract'
 import { multiRepoWorkspaceSupportedOnTarget } from './multi-repo-workspace-capability'
 import { callMultiRepoWorkspace } from './multi-repo-workspace-transport'
@@ -72,7 +73,7 @@ export const createMultiRepoWorkspaceSlice: StateCreator<
       resolveOwnHostId: (candidate) => getFolderWorkspaceHostId(candidate, get().projectGroups)
     })
     set((s) => ({
-      folderWorkspaces: s.folderWorkspaces.map((workspace) =>
+      folderWorkspaces: selectFolderWorkspaces(s).map((workspace) =>
         workspace.id === owned.id &&
         getFolderWorkspaceHostId(workspace, s.projectGroups) === ownerHostId
           ? owned
@@ -102,7 +103,7 @@ export const createMultiRepoWorkspaceSlice: StateCreator<
       set((s) => ({
         folderWorkspaces: [
           owned,
-          ...s.folderWorkspaces.filter(
+          ...selectFolderWorkspaces(s).filter(
             (workspace) =>
               workspace.id !== owned.id ||
               getFolderWorkspaceHostId(workspace, s.projectGroups) !==
@@ -144,14 +145,18 @@ export const createMultiRepoWorkspaceSlice: StateCreator<
       const result = await callMultiRepoWorkspace(target, 'delete', args)
       if (result.workspaceRemoved) {
         set((s) => ({
-          folderWorkspaces: s.folderWorkspaces.filter(
+          folderWorkspaces: selectFolderWorkspaces(s).filter(
             (workspace) =>
               workspace.id !== args.folderWorkspaceId ||
               getFolderWorkspaceHostId(workspace, s.projectGroups) !== ownerHostId
           ),
           folderWorkspacePathStatuses: {}
         }))
-        if (!get().folderWorkspaces.some((workspace) => workspace.id === args.folderWorkspaceId)) {
+        if (
+          !selectFolderWorkspaces(get()).some(
+            (workspace) => workspace.id === args.folderWorkspaceId
+          )
+        ) {
           await Promise.resolve(get().shutdownWorktreeBrowsers(workspaceKey))
           void get().deleteManagedBrowserSessionProfile({ kind: 'worktree', id: workspaceKey })
           get().purgeWorktreeTerminalState([workspaceKey])
