@@ -52,6 +52,14 @@ export type MobileMediaSink = {
   dispose(): void
 }
 
+// Typed so the shell can tell the page an update is needed; retrying cannot help.
+export class MobileMediaHostOutdatedError extends Error {
+  constructor() {
+    super('Update Orca on your desktop to preview media files on mobile')
+    this.name = 'MobileMediaHostOutdatedError'
+  }
+}
+
 export async function downloadMobileFileMedia(
   client: MobileFilePreviewRpcSender,
   media: MobileFileMedia,
@@ -68,7 +76,7 @@ export async function downloadMobileFileMedia(
       !statReply.ok &&
       isMobileMethodUnavailableError(statReply.error.code, statReply.error.message)
     ) {
-      throw new Error('Update Orca on your desktop to preview media files on mobile')
+      throw new MobileMediaHostOutdatedError()
     }
     const stat = statRead.interpret(statReply)
     checkDownloadActive(signal)

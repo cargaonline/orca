@@ -3,7 +3,7 @@ import { useFocusEffect } from 'expo-router'
 import { ActivityIndicator, Text, View } from 'react-native'
 import { colors } from '../theme/mobile-theme'
 import { usePdfOpener } from '../platform/pdf-opener'
-import { PdfNoViewerError } from '../platform/pdf-opener-contract'
+import { PdfOpenRefusedError } from '../platform/pdf-opener-contract'
 import type { MobileFileMedia } from './mobile-file-media'
 import { filePreviewStyles as styles } from './mobile-file-preview-styles'
 import { MobileLoadErrorState, MobileStateButton } from '../components/MobileLoadErrorState'
@@ -44,7 +44,7 @@ export function MobilePdfPreview({ media }: { media: MobileFileMedia }) {
         settle({
           status: 'failed',
           message: error instanceof Error ? error.message : 'Unable to open this PDF',
-          retryable: !(error instanceof PdfNoViewerError)
+          retryable: !(error instanceof PdfOpenRefusedError)
         })
     )
   }

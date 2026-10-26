@@ -4,10 +4,10 @@ export type PdfOpener = {
   cancel: () => void
 }
 
-// Retrying cannot help until the user installs a PDF app, so the preview offers no Retry.
-export class PdfNoViewerError extends Error {
-  constructor() {
-    super('No app on this phone can open PDFs')
-    this.name = 'PdfNoViewerError'
+// A refusal retrying cannot fix (no PDF app, outdated host), so the preview offers no Retry.
+export class PdfOpenRefusedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PdfOpenRefusedError'
   }
 }

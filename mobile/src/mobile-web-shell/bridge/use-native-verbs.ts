@@ -80,6 +80,7 @@ export const NATIVE_VERB_REASONS = [
   'native_verb_not_a_stream',
   'native_audio_not_capturing',
   'native_pdf_no_viewer',
+  'native_pdf_host_outdated',
   'native_verb_not_a_verb',
   'bridge_cap_exceeded',
   'bridge_host_disposed',

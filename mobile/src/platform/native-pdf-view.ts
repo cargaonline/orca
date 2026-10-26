@@ -5,11 +5,16 @@ import { useFocusEffect } from 'expo-router'
 import { presentPdf } from '../../modules/orca-mobile-web-shell/src'
 import { getRuntimePathBasename } from '../../../src/shared/cross-platform-path'
 import { PDF_MIME_TYPE } from '../files/mobile-file-media'
-import { downloadMobileFileMedia, type MobileMediaSink } from '../files/mobile-file-media-download'
+import {
+  downloadMobileFileMedia,
+  MobileMediaHostOutdatedError,
+  type MobileMediaSink
+} from '../files/mobile-file-media-download'
 import {
   pdfViewParamsSchema,
   type BridgePdfOpenParams
 } from '../mobile-web-shell/bridge/bridge-native-verbs'
+import { BridgeNativeVerbRefusedError } from '../mobile-web-shell/bridge-host-errors'
 import { scopeRpcClientToExecutionHost } from '../transport/execution-host-scoped-rpc-client'
 import { useHostClient } from '../transport/host-client-hooks'
 import { discardUnreturnedMediaFile } from './native-media-device'
@@ -59,7 +64,11 @@ export function createNativePdfViewer(readClient: () => RpcClient | null) {
       pdfFileSink(new FsFile(folder, getRuntimePathBasename(relativePath))),
       controller.signal,
       () => {}
-    )
+    ).catch((error: unknown) => {
+      throw error instanceof MobileMediaHostOutdatedError
+        ? new BridgeNativeVerbRefusedError('native_pdf_host_outdated', error.message)
+        : error
+    })
     if (controller.signal.aborted) {
       throw new Error('the PDF open was cancelled')
     }
