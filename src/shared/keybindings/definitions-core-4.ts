@@ -21,6 +21,64 @@ export const KEYBINDING_DEFINITION_CORE_4: readonly KeybindingDefinition[] = [
     defaultBindings: platformBindings(['Mod+Shift+J'])
   },
   {
+    id: 'workspace.selectRepoByIndex',
+    title: 'Select Repo in Workspace 1–9',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: [
+      'shortcut',
+      'workspace',
+      'repo',
+      'repository',
+      'project',
+      'multi-repo',
+      'select',
+      'switch',
+      'number',
+      'digit',
+      '1-9',
+      'index'
+    ],
+    // Why: Ctrl+Alt is AltGr on Windows/Linux, so only macOS gets a default; 1 is the workspace folder, 2-9 are repos.
+    defaultBindings: {
+      darwin: ['Mod+Alt+1'],
+      linux: [],
+      win32: []
+    }
+  },
+  {
+    id: 'workspace.nextRepo',
+    title: 'Next Repo in Workspace',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: [
+      'shortcut',
+      'workspace',
+      'repo',
+      'repository',
+      'project',
+      'multi-repo',
+      'next'
+    ],
+    defaultBindings: platformBindings([])
+  },
+  {
+    id: 'workspace.previousRepo',
+    title: 'Previous Repo in Workspace',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: [
+      'shortcut',
+      'workspace',
+      'repo',
+      'repository',
+      'project',
+      'multi-repo',
+      'previous'
+    ],
+    defaultBindings: platformBindings([])
+  },
+  {
     id: 'sidebar.childWorkspaces.toggle',
     title: 'Toggle Child Workspaces',
     group: 'Global',

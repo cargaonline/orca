@@ -47,7 +47,10 @@ export function installMainWindowShortcutRouting(args: {
       return false
     }
 
-    const isIndexJump = action.type === 'jumpToWorktreeIndex' || action.type === 'jumpToTabIndex'
+    const isIndexJump =
+      action.type === 'jumpToWorktreeIndex' ||
+      action.type === 'jumpToTabIndex' ||
+      (action.type === 'selectWorkspaceRepo' && action.selection.kind === 'index')
     if (isIndexJump && isAutoRepeat) {
       // Renderer index handlers skip repeats; contain them here or raw keys leak to xterm/DOM.
       event.preventDefault()

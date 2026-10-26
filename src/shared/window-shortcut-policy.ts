@@ -45,7 +45,12 @@ export type WindowShortcutAction =
   | { type: 'jumpToWorktreeIndex'; index: number }
   | { type: 'jumpToTabIndex'; index: number }
   | { type: 'worktreeHistoryNavigate'; direction: 'back' | 'forward' }
+  | { type: 'selectWorkspaceRepo'; selection: WorkspaceRepoSelection }
   | { type: 'dictationKeyDown' }
+
+export type WorkspaceRepoSelection =
+  | { kind: 'next' | 'previous' }
+  | { kind: 'index'; index: number }
 
 type WindowShortcutResolveOptions = KeybindingMatchOptions
 
@@ -275,6 +280,28 @@ export function resolveWindowShortcutAction(
     return { type: 'jumpToTabIndex', index: tabIndex }
   }
 
+  const repoIndex = matchKeybindingDigitIndex(
+    'workspace.selectRepoByIndex',
+    input,
+    platform,
+    keybindings,
+    options
+  )
+  if (repoIndex !== null) {
+    return {
+      type: 'selectWorkspaceRepo',
+      selection: { kind: 'index', index: repoIndex }
+    }
+  }
+
+  if (actionMatches('workspace.nextRepo', input, platform, keybindings, options)) {
+    return { type: 'selectWorkspaceRepo', selection: { kind: 'next' } }
+  }
+
+  if (actionMatches('workspace.previousRepo', input, platform, keybindings, options)) {
+    return { type: 'selectWorkspaceRepo', selection: { kind: 'previous' } }
+  }
+
   if (actionMatches('tab.openQuickCommandsMenu', input, platform, keybindings, options)) {
     return { type: 'toggleQuickCommandsMenu' }
   }
@@ -327,6 +354,12 @@ export function getWindowShortcutActionId(action: WindowShortcutAction): Keybind
       return 'workspace.selectByIndex'
     case 'jumpToTabIndex':
       return 'tab.selectByIndex'
+    case 'selectWorkspaceRepo':
+      return action.selection.kind === 'index'
+        ? 'workspace.selectRepoByIndex'
+        : action.selection.kind === 'next'
+          ? 'workspace.nextRepo'
+          : 'workspace.previousRepo'
   }
 }
 
