@@ -185,7 +185,7 @@ describe('native chat Markdown image preview', () => {
     const view = render(
       <TooltipProvider>
         <NativeChatMarkdownImageOwnerProvider tabId="chat-0" isVisible sessionId="session-0">
-          <NativeChatMarkdown content="![Chart](chart.png)" allowFileUriLinks />
+          <NativeChatMarkdown content="![Chart](chart.png)" variant="document" allowFileUriLinks />
         </NativeChatMarkdownImageOwnerProvider>
       </TooltipProvider>
     )
