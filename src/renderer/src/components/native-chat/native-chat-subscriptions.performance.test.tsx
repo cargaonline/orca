@@ -73,11 +73,11 @@ function corpus(scale: number, dense = false) {
 
   function terminalMap(map: AppState['tabsByWorktree']) {
     return new Proxy(map, {
-      get(target, key, receiver) {
+      get(target, key) {
         if (typeof key === 'string' && Object.hasOwn(target, key)) {
           work.terminalWorkspaceReads += 1
         }
-        return Reflect.get(target, key, receiver)
+        return typeof key === 'string' ? target[key] : undefined
       },
       ownKeys(target) {
         work.terminalMapEnumerations += 1
@@ -87,11 +87,11 @@ function corpus(scale: number, dense = false) {
   }
   function unifiedMap(map: AppState['unifiedTabsByWorktree']) {
     return new Proxy(map, {
-      get(target, key, receiver) {
+      get(target, key) {
         if (typeof key === 'string' && Object.hasOwn(target, key)) {
           work.unifiedWorkspaceReads += 1
         }
-        return Reflect.get(target, key, receiver)
+        return typeof key === 'string' ? target[key] : undefined
       },
       ownKeys(target) {
         work.unifiedMapEnumerations += 1
