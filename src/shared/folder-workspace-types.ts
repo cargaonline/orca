@@ -2,6 +2,7 @@ import type { ExecutionHostId } from './execution-host'
 import type { TaskSourceContext } from './task-source-context'
 import type { TuiAgent } from './tui-agent'
 import type { DiffComment } from './diff-comment-types'
+import type { MultiRepoWorkspace } from './multi-repo-workspace'
 import type { SmartTier } from './sidebar-list/sort-stamps'
 import type { ExternalConversationLink } from './external-conversation-link'
 import type {
@@ -51,6 +52,8 @@ export type FolderWorkspace = {
   diffComments?: DiffComment[]
   /** See {@link WorktreeMeta.externalConversations}. */
   externalConversations?: ExternalConversationLink[]
+  /** Present only on multi-repo workspaces; absent means a plain folder workspace. */
+  multiRepo?: MultiRepoWorkspace
 }
 
 export type FolderWorkspaceLinkedTask = WorkspaceLinkedItem

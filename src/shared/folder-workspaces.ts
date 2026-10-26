@@ -6,6 +6,7 @@ import { normalizeWorkspaceLinkedItem } from './workspace-linked-item'
 import { isWorkspaceLinkedItemSourceContextMatch } from './workspace-linked-item-source-context'
 import { normalizeWorkspaceCreatorProvenance } from './workspace-creator-provenance'
 import { getWorkspaceAttachments } from './workspace-attachments'
+import { normalizeMultiRepoWorkspace } from './multi-repo-workspace'
 import { isSmartTier } from './sidebar-list/sort-stamps'
 
 export function normalizeFolderWorkspaceName(
@@ -58,6 +59,7 @@ export function normalizeFolderWorkspaces(
     const linkedTask = normalizeWorkspaceLinkedItem(raw.linkedTask)
     const linkedTaskSourceContext = normalizeStoredTaskSourceContext(raw.linkedTaskSourceContext)
     const creatorProvenance = normalizeWorkspaceCreatorProvenance(raw.creatorProvenance)
+    const multiRepo = normalizeMultiRepoWorkspace(raw.multiRepo)
     seen.add(raw.id)
     // Do not persist fetch-time executionHostId: it may name an unowned runtime authority and lacks a generation fence.
     // connectionId is the durable pin main projects from.
@@ -131,7 +133,8 @@ export function normalizeFolderWorkspaces(
       // Entries are validated where they are read (external-conversation-links.ts).
       ...(Array.isArray(raw.externalConversations)
         ? { externalConversations: raw.externalConversations }
-        : {})
+        : {}),
+      ...(multiRepo ? { multiRepo } : {})
     })
   }
   return workspaces.sort(
