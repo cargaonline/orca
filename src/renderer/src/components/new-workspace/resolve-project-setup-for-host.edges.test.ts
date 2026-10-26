@@ -72,11 +72,15 @@ describe('resolveProjectSetupForHost edges', () => {
   })
 
   it('does not treat a non-ready state as eligible', () => {
-    for (const state of ['error', 'cloning', 'pending'] as const) {
+    const states: ProjectHostSetup['setupState'][] = [
+      'error',
+      'not-set-up',
+      'setting-up',
+      'unsupported'
+    ]
+    for (const state of states) {
       expect(
-        resolveProjectSetupForHost('p1', 'local', [
-          setup('s', { setupState: state as ProjectHostSetup['setupState'] })
-        ])
+        resolveProjectSetupForHost('p1', 'local', [setup('s', { setupState: state })])
       ).toEqual({ status: 'unavailable', reason: 'not_ready' })
     }
   })
