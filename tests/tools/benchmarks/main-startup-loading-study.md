@@ -73,6 +73,39 @@ The failures call real `mkdirSync` under `/fake` or `/fake/userData/daemon` desp
 
 Final production source is identical to the measured recommended revision. Subsequent changes correct the five runtime/SSH test mocks, harden benchmark cleanup and document results. Draft CI skips the heavy checks; local validation does not establish packaged or native Windows/macOS readiness.
 
+## Whole-app idle memory follow-up
+
+A separate cohort measures all owned Linux app processes, with three interleaved fresh launches per build sampled 120 seconds after renderer DOM readiness. Order is A/B, B/A, A/B, one app at a time, after the Docker latency workload has finished. Build identities match the comparison above. The workload has one hidden renderer, no repo/workspace or active terminal/agent/SSH, and disabled GPU acceleration and telemetry. No forced GC or heap snapshot is used.
+
+| Median whole-app metric              |       Base | Recommended |
+| ------------------------------------ | ---------: | ----------: |
+| PSS (proportional resident pages)    | 435.110 MB |  421.889 MB |
+| USS (private resident pages)         | 311.411 MB |  298.590 MB |
+| Sum of RSS (duplicates shared pages) | 853.123 MB |  840.303 MB |
+
+The observed PSS reduction is **13.221 MB (3.04%)**. Per-pair PSS reductions are 14.140, 8.600 and 13.221 MB. Baseline PSS ranges 432.615–435.422 MB; recommended PSS ranges 421.282–424.016 MB. PSS apportions shared pages rather than counting them once per mapping process. This is a different metric and cohort from the earlier main-only RSS result; the savings are not added together.
+
+All nine processes are represented in every sample: main, renderer, GPU helper, network utility, two zygotes, terminal daemon, daemon-scope watcher and crash reporter. The sampler includes descendants and uniquely owned profile arguments, verifies process start identity, and checks every Electron-reported PID is covered. There are no missing app PIDs, smaps read errors or swapped pages. Xvfb, benchmark driver and Docker are excluded. Median main PSS is 190.609 → 179.289 MB; per-role medians need not sum to the whole-app median, and differences outside main are not attributed to a specific boundary.
+
+PSS depends on other processes sharing pages, and n=3 is a small host-local sample. This establishes an observed idle reduction for this controlled profile, with no forecast for retained workspaces, active SSH/telemetry, normal GPU-composited desktop use, native Windows or macOS physical footprint. Further feature boundaries have no measured additional saving yet.
+
+## First SSH use: measured latency tradeoff
+
+A follow-up compares ten interleaved fresh launches per build against the repository's Docker OpenSSH fixture, with generated key authentication and actual renderer `ssh.testConnection` IPC. All 80 cold/warm authentication probes succeed and disconnect. Source/build identities match the comparison above; Electron 43.8.1, Linux x64, GPU/telemetry disabled, hidden isolated Xvfb. Requests begin 3.5 seconds after DOM readiness. Process/module caches are cold; the OS file cache is uncontrolled and was not flushed.
+
+| Median metric                                |      Base | Recommended |
+| -------------------------------------------- | --------: | ----------: |
+| Cold authenticated request, n=10             |  213.9 ms |    240.3 ms |
+| Per-cold-call maximum main event-loop delay  |   6.58 ms |    32.28 ms |
+| Overlapping main IPC maximum round-trip time |   2.65 ms |     27.8 ms |
+| Warm authenticated request, n=30             | 206.25 ms |    205.8 ms |
+
+The paired cold-request penalty is a median **24.85 ms**; per-build cold request p90 is 257.8 → 282.6 ms. Warm calls are correlated within ten processes. Renderer-local five-millisecond timers continue at about 5.2 ms; this does not prove compositor frame smoothness or native input responsiveness. The main-process pause can delay unrelated main-backed actions even while the renderer continues running. An earlier independent one-pair control reached 108.5 ms main delay / 105.3 ms main IPC RTT; it did not recur in the primary series, and its cause remains unexplained.
+
+Dynamic import shifts parse/evaluation and initialization onto the first active SSH operation. The loaded process-wide owner is then reused. Intent-based preloading can move that work earlier and retains its memory; narrowing transport/test loading could avoid demanding managed-host and compatibility owners. Neither mitigation is implemented or measured here. The evidence establishes a one-time first-use cost, rather than zero user-facing tradeoff.
+
+A separate public `ssh.connect` attempt on both builds returns the same unsupported-host-version refusal against the bare Docker fixture. It does not establish managed deployment, durable connect or directory browsing. Native Windows/macOS, WSL, slow-disk and WAN latency remain unmeasured. Short-run memory snapshots are transient startup data, separate from the 120-second idle measurements.
+
 ## Remaining eager graph and follow-up design
 
 `main-process-ready` still reaches `main-process-ready-runtime` → `main-process-runtime-service` → `OrcaRuntimeService`. The service is an inheritance chain, and `pty-terminal-summary` itself extends orchestration/terminal owners rather than importing only a small summary function. Those layers statically reach `headless-terminal-state`, `provider-buffer-capture`, `terminal-visible-state`, and `HeadlessEmulator`. Durable checkpoint/replay owners provide another emulator path. M4 therefore removes one edge, not the idle xterm library.
@@ -82,6 +115,10 @@ Moving the whole runtime import until ready would shift module initialization to
 YAML remains loaded by required Hermes hook/config refresh in a fresh profile. Delaying that refresh past its correctness deadline solely to remove YAML from a sample is not justified. M5 provides a main-only loading policy, with no idle saving attributed to this workload.
 
 Making xterm truly cold requires changing synchronous runtime terminal creation, or introducing a supported lazy composition seam. Preserve ingestion/write ordering, renderer hydration/live overlap, cancellation generations, query replies, ConPTY behavior, daemon recovery and mobile provider snapshots. This is a separate terminal-lifecycle change, disproportionate to the proposed 0.65 MB without stronger evidence.
+
+The same feature-owner boundary can extend beyond SSH. A bounded next experiment is speech: desktop host factories eagerly import `ModelManager` and `SttService`, although their instances are already lazy. A static counterfactual removes 15 local source files by cutting those two class-import edges; that is structural evidence, with no retained-memory attribution. Larger candidates are Linear/Jira/review owners, selected structured-agent adapters at launch/resume, and browser/emulator backends. Runtime construction and desktop IPC must both stop importing each concrete owner; the prototype-walking command facade is another eager root. The renderer already lazily loads its major settings/editor/terminal surfaces, so repeating that proposal would duplicate existing work.
+
+Preserve synchronous names, authorization, schemas, cheap status and capability answers; use existing async demand boundaries for active owners, with shared initialization and lifecycle/cancellation fencing. Measure full-app idle and after-use memory plus first-use main/IPC latency for each experiment. Main-process deferral cannot remove the Electron floor, live editor/terminal state, or active provider memory. No additional MB or overall-app percentage forecast is established by this source audit, and candidate source shares must not be added together.
 
 ## Performance audit coverage
 
