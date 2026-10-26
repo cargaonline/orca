@@ -26,6 +26,7 @@ import type { AgentStatusIpcPayload } from '../../../shared/agent-status-types'
 
 import { installRuntimeFileCommandSurface } from '../runtime-file-command-surface'
 import { installRuntimeGitCommandSurface } from '../runtime-git-command-surface'
+import { recoverInterruptedMultiRepoMembers } from '../multi-repo-workspace/multi-repo-startup-recovery'
 import { installRuntimeRepositoryCommandSurface } from '../runtime-repository-command-surface'
 import { installRuntimeReviewCommandSurface } from '../runtime-review-command-surface'
 import { installRuntimeServiceCommandSurface } from '../runtime-service-command-surface'
@@ -112,6 +113,9 @@ export abstract class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCo
   ) {
     super()
     this.store = store
+    if (store) {
+      recoverInterruptedMultiRepoMembers(store)
+    }
     this.machineName.start()
     this.prepareClaudeAuth = deps?.prepareClaudeAuth
     installRuntimeFileCommandSurface(this, this.fileCommands)

@@ -366,11 +366,11 @@ export class MultiRepoWorkspaceService {
           ...(member.branchExplicit ? { branchNameOverride: member.branchName } : {}),
           ...(member.baseRef ? { baseBranch: member.baseRef } : {}),
           placement: { parentDir: workspace.folderPath, leafName: member.dirName },
-          lineage: { parentWorkspace: folderWorkspaceKey(workspace.id) },
           creationId: member.memberId,
           activate: false,
           ...(workspace.creatorProvenance ? { creatorProvenance: workspace.creatorProvenance } : {})
         })
+        this.recordMemberLineage(workspace, result.worktree.id, result.worktree.instanceId)
         this.markReady(folderWorkspaceId, memberId, {
           worktreeId: result.worktree.id,
           instanceId: result.worktree.instanceId,
