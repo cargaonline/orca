@@ -18977,6 +18977,13 @@
           "sameAsLast": "Same as last time: {{projects}}",
           "workspaceHost": "Workspace host"
         }
+      },
+      "multiRepo": {
+        "strip": {
+          "label": "Repos in {{name}}",
+          "all": "All",
+          "changed": "{{n}} changed"
+        }
       }
     },
     "i18n": {

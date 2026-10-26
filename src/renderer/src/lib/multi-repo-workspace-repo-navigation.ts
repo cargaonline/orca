@@ -14,7 +14,7 @@ export type WorkspaceRepoNavigationTarget = {
 }
 
 /** Strip order: the workspace folder first, then ready members. */
-function workspaceRepoEntries(folderWorkspace: FolderWorkspace): string[] {
+export function workspaceRepoEntries(folderWorkspace: FolderWorkspace): string[] {
   const memberWorktreeIds = (folderWorkspace.multiRepo?.members ?? []).flatMap((member) =>
     member.state === 'ready' && member.worktreeId ? [member.worktreeId] : []
   )
@@ -48,6 +48,17 @@ export function resolveWorkspaceRepoTarget(
   return null
 }
 
+export function activateWorkspaceRepoEntry(
+  workspaceKey: string,
+  folderWorkspace: FolderWorkspace
+): void {
+  const executionHostId = folderWorkspace.multiRepo?.executionHostId
+  activateAndRevealWorkspace(workspaceKey, {
+    navigationIntent: 'user-open',
+    ...(executionHostId ? { executionHostId } : {})
+  })
+}
+
 export function selectWorkspaceRepoFromShortcut(selection: WorkspaceRepoSelection): void {
   const state = useAppStore.getState()
   if (state.activeView !== 'terminal' || state.activeModal === 'worktree-palette') {
@@ -57,9 +68,5 @@ export function selectWorkspaceRepoFromShortcut(selection: WorkspaceRepoSelectio
   if (!target) {
     return
   }
-  const executionHostId = target.folderWorkspace.multiRepo?.executionHostId
-  activateAndRevealWorkspace(target.workspaceKey, {
-    navigationIntent: 'user-open',
-    ...(executionHostId ? { executionHostId } : {})
-  })
+  activateWorkspaceRepoEntry(target.workspaceKey, target.folderWorkspace)
 }
