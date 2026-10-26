@@ -238,7 +238,9 @@ describe('resolveNativeChatImageRuntimeContext', () => {
       ...base,
       ...folder,
       unifiedTabsByWorktree: {
-        [nativeChatFanoutWorkspace(0)]: [agentSessionTabFixture('tab-1', nativeChatFanoutWorkspace(0))]
+        [nativeChatFanoutWorkspace(0)]: [
+          agentSessionTabFixture('tab-1', nativeChatFanoutWorkspace(0))
+        ]
       }
     }
     const environment = (id: string): AppState['runtimeEnvironments'][number] => ({
@@ -353,7 +355,9 @@ describe('resolveNativeChatImageRuntimeContext', () => {
         {
           ...floating,
           tabsByWorktree: {
-            [FLOATING_TERMINAL_WORKTREE_ID]: [terminalTabFixture('tab-1', FLOATING_TERMINAL_WORKTREE_ID)]
+            [FLOATING_TERMINAL_WORKTREE_ID]: [
+              terminalTabFixture('tab-1', FLOATING_TERMINAL_WORKTREE_ID)
+            ]
           },
           unifiedTabsByWorktree: {}
         },
@@ -415,7 +419,11 @@ describe('resolveNativeChatImageRuntimeContext', () => {
         { ...paired, sshStateByEnvironment: ssh(4).sshStateByEnvironment },
         { expectedSshConnectionGeneration: 4 }
       ],
-      ['SSH generation absent', { ...paired, sshStateByEnvironment: ssh().sshStateByEnvironment }, null],
+      [
+        'SSH generation absent',
+        { ...paired, sshStateByEnvironment: ssh().sshStateByEnvironment },
+        null
+      ],
       [
         'unpaired SSH',
         {

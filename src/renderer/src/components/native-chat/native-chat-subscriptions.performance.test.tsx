@@ -185,9 +185,7 @@ function corpus(scale: number, dense = false) {
           unifiedTabsByWorktree: unifiedMap({
             ...current.unifiedTabsByWorktree,
             [source]: [],
-            [destination]: [
-              agentSessionTabFixture(`chat-${mounted - 1}`, destination)
-            ]
+            [destination]: [agentSessionTabFixture(`chat-${mounted - 1}`, destination)]
           })
         })
       )
@@ -292,7 +290,11 @@ describe('native chat store subscription performance', () => {
         useAppStore.setState({
           folderWorkspaces: current.folderWorkspaces.map((folder) =>
             `folder:${folder.id}` === destination
-              ? { ...folder, folderPath: '/latest-owner-path', executionHostId: 'runtime:latest' as const }
+              ? {
+                  ...folder,
+                  folderPath: '/latest-owner-path',
+                  executionHostId: 'runtime:latest' as const
+                }
               : folder
           )
         })
