@@ -151,6 +151,7 @@ export class FolderWorkspacePersistenceOperations {
         | 'lastTerminalUseAt'
         | 'diffComments'
         | 'externalConversations'
+        | 'multiRepo'
       >
     > &
       WorkspaceAttachmentMutation
@@ -264,6 +265,9 @@ export class FolderWorkspacePersistenceOperations {
     }
     if (updates.externalConversations !== undefined) {
       workspace.externalConversations = updates.externalConversations
+    }
+    if (updates.multiRepo !== undefined) {
+      workspace.multiRepo = updates.multiRepo
     }
     workspace.updatedAt = Date.now()
     this.scheduleSave()

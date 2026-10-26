@@ -32,7 +32,10 @@ export type MultiRepoMember = {
   repoId: string
   /** Leaf directory under the workspace root. Unique case-insensitively within the workspace. */
   dirName: string
+  /** The user's explicit branch, or the predicted default until the worktree reports its real branch. */
   branchName: string
+  /** True when the user typed the branch; false lets the create pipeline apply the branch prefix. */
+  branchExplicit?: boolean
   baseRef?: string
   state: MultiRepoMemberState
   attempts: number
@@ -49,6 +52,8 @@ export type MultiRepoWorkspace = {
   rootOwnedByOrca: boolean
   /** Order is the strip and sidebar order. */
   members: MultiRepoMember[]
+  /** Members taken out with detachMember; attachMember restores one while its worktree still exists. */
+  detachedMembers?: MultiRepoMember[]
   /** Set when the user asked for an agent; the client starts it once every member settles. */
   pendingAgentStart?: boolean
 }
@@ -58,7 +63,9 @@ export function isMultiRepoMemberSettled(member: Pick<MultiRepoMember, 'state'>)
   return member.state === 'ready' || member.state === 'failed' || member.state === 'interrupted'
 }
 
-export function isMultiRepoWorkspaceSettled(workspace: Pick<MultiRepoWorkspace, 'members'>): boolean {
+export function isMultiRepoWorkspaceSettled(
+  workspace: Pick<MultiRepoWorkspace, 'members'>
+): boolean {
   return workspace.members.every(isMultiRepoMemberSettled)
 }
 
@@ -68,6 +75,7 @@ export const MULTI_REPO_WORKSPACE_ERROR_CODES = [
   'multi_repo_repo_not_found',
   'multi_repo_repo_not_git',
   'multi_repo_repo_direct_ssh',
+  'multi_repo_repo_wsl',
   'multi_repo_mixed_hosts',
   'multi_repo_workspace_not_found',
   'multi_repo_member_not_found',
@@ -78,6 +86,7 @@ export const MULTI_REPO_WORKSPACE_ERROR_CODES = [
   'multi_repo_member_locked',
   'multi_repo_root_unavailable',
   'multi_repo_delete_force_not_named',
+  'multi_repo_create_in_progress',
   'multi_repo_has_members'
 ] as const
 export type MultiRepoWorkspaceErrorCode = (typeof MULTI_REPO_WORKSPACE_ERROR_CODES)[number]
@@ -161,6 +170,7 @@ function normalizeMember(raw: unknown): MultiRepoMember | null {
   // A ready member without a worktree cannot be adopted or removed; treat it as interrupted so Retry can adopt.
   const state = raw.state === 'ready' && !worktreeId ? 'interrupted' : raw.state
   const baseRef = nonEmptyString(raw.baseRef)
+  const branchExplicit = raw.branchExplicit === true
   const worktreeInstanceId = nonEmptyString(raw.worktreeInstanceId)
   const failureRaw = raw.failure
   const failure =
@@ -182,6 +192,7 @@ function normalizeMember(raw: unknown): MultiRepoMember | null {
     repoId,
     dirName,
     branchName,
+    ...(branchExplicit ? { branchExplicit: true } : {}),
     ...(baseRef ? { baseRef } : {}),
     state,
     attempts:
@@ -206,20 +217,28 @@ export function normalizeMultiRepoWorkspace(value: unknown): MultiRepoWorkspace 
     return undefined
   }
   const seenMembers = new Set<string>()
-  const members: MultiRepoMember[] = []
-  for (const rawMember of value.members) {
-    const member = normalizeMember(rawMember)
-    if (!member || seenMembers.has(member.memberId)) {
-      continue
+  const normalizeMembers = (rawMembers: readonly unknown[]): MultiRepoMember[] => {
+    const normalized: MultiRepoMember[] = []
+    for (const rawMember of rawMembers) {
+      const member = normalizeMember(rawMember)
+      if (!member || seenMembers.has(member.memberId)) {
+        continue
+      }
+      seenMembers.add(member.memberId)
+      normalized.push(member)
     }
-    seenMembers.add(member.memberId)
-    members.push(member)
+    return normalized
   }
+  const members = normalizeMembers(value.members)
+  const detachedMembers = Array.isArray(value.detachedMembers)
+    ? normalizeMembers(value.detachedMembers)
+    : []
   return {
     version: 1,
     executionHostId,
     rootOwnedByOrca: value.rootOwnedByOrca === true,
     members,
+    ...(detachedMembers.length > 0 ? { detachedMembers } : {}),
     ...(value.pendingAgentStart === true ? { pendingAgentStart: true } : {})
   }
 }
