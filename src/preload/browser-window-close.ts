@@ -1,11 +1,20 @@
-import { installBrowserWindowCloseGuard } from './browser-window-close-installation'
-import type { ContextBridge } from 'electron'
+import {
+  installBrowserWindowCloseGuard,
+  PRELOAD_BROWSER_GUEST_WINDOW_CLOSE_CHANNEL
+} from './browser-window-close-installation'
+import type { ContextBridge, IpcRenderer } from 'electron'
 
 // Raw require keeps the sandboxed preload standalone in the CJS build.
-const { contextBridge } = require('electron') as { contextBridge: ContextBridge }
+const electron: {
+  contextBridge: ContextBridge
+  ipcRenderer: Pick<IpcRenderer, 'sendToHost'>
+} = require('electron')
+const { contextBridge, ipcRenderer } = electron
 
-// Why top frame only: extension-profile guests also run preloads in subframes, where
-// window.close() already does nothing and a frozen close would only break a frame's own code.
+// Subframe window.close() is already inert; preserve the frame's own implementation.
 if (process.isMainFrame) {
-  contextBridge.executeInMainWorld({ func: installBrowserWindowCloseGuard })
+  contextBridge.executeInMainWorld({
+    func: installBrowserWindowCloseGuard,
+    args: [() => ipcRenderer.sendToHost(PRELOAD_BROWSER_GUEST_WINDOW_CLOSE_CHANNEL)]
+  })
 }

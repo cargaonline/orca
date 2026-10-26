@@ -12,6 +12,7 @@ import { BrowserUseSetup } from './BrowserUsePane'
 import { BrowserSearchEngineSetting } from './BrowserSearchEngineSetting'
 import { BrowserLinkRoutingSetting } from './BrowserLinkRoutingSetting'
 import { BrowserLinkRoutingModifierSetting } from './BrowserLinkRoutingModifierSetting'
+import { BrowserLinkRoutingBackgroundSetting } from './BrowserLinkRoutingBackgroundSetting'
 import { BrowserTerminalLinkActionsSetting } from './BrowserTerminalLinkActionsSetting'
 import { BrowserLocalhostWorktreeLabelsSetting } from './BrowserLocalhostWorktreeLabelsSetting'
 import { BrowserClientHostedRemoteSetting } from './BrowserClientHostedRemoteSetting'
@@ -122,6 +123,7 @@ export function BrowserPane({
   const showUserAgent = matchesSettingsSearch(searchQuery, [browserSearchEntries[10]])
   const showSitePermissions = matchesSettingsSearch(searchQuery, [browserSearchEntries[11]])
   const showProfileScope = matchesSettingsSearch(searchQuery, [browserSearchEntries[12]])
+  const showLinkRoutingBackground = matchesSettingsSearch(searchQuery, [browserSearchEntries[13]])
   const showBrowserUse = matchesSettingsSearch(searchQuery, getBrowserUsePaneSearchEntries())
   const isMac = isMacUserAgent()
   const linkRoutingDescription = getBrowserLinkRoutingDescription(
@@ -272,6 +274,10 @@ export function BrowserPane({
           isMac={isMac}
           updateSettings={updateSettings}
         />
+      ) : null}
+
+      {showLinkRoutingBackground ? (
+        <BrowserLinkRoutingBackgroundSetting settings={settings} updateSettings={updateSettings} />
       ) : null}
 
       {showTerminalLinkActions ? (

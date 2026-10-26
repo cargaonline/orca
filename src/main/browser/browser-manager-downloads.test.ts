@@ -74,6 +74,7 @@ describe('browserManager', () => {
     const guest = {
       id: 407,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -154,6 +155,7 @@ describe('browserManager', () => {
     const guest = {
       id: 408,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -245,6 +247,7 @@ describe('browserManager', () => {
     const guest = {
       id: 409,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -277,16 +280,19 @@ describe('browserManager', () => {
       rendererWebContentsId
     })
 
-    expect(rendererSendMock.mock.calls.map(([channel]) => channel)).toEqual([
-      'browser:download-requested',
-      'browser:download-finished'
-    ])
+    // Registration also reports audio state; only download sends matter here.
+    expect(
+      rendererSendMock.mock.calls
+        .map(([channel]) => channel)
+        .filter((channel) => channel.startsWith('browser:download-'))
+    ).toEqual(['browser:download-requested', 'browser:download-finished'])
   })
 
   it('drops pending download records when an unregistered guest is destroyed', () => {
     const guest = {
       id: 412,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -317,6 +323,7 @@ describe('browserManager', () => {
     const guest = {
       id: 410,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -361,6 +368,7 @@ describe('browserManager', () => {
     const guest = {
       id: 411,
       isDestroyed: vi.fn(() => false),
+      isCurrentlyAudible: vi.fn(() => false),
       getType: vi.fn(() => 'webview'),
       setBackgroundThrottling: guestSetBackgroundThrottlingMock,
       setWindowOpenHandler: guestSetWindowOpenHandlerMock,
@@ -392,10 +400,12 @@ describe('browserManager', () => {
     browserManager.handleGuestWillDownload({ guestWebContentsId: guest.id, item })
 
     expect(item.cancel).toHaveBeenCalledTimes(1)
-    expect(rendererSendMock.mock.calls.map(([channel]) => channel)).toEqual([
-      'browser:download-requested',
-      'browser:download-finished'
-    ])
+    // Registration also reports audio state; only download sends matter here.
+    expect(
+      rendererSendMock.mock.calls
+        .map(([channel]) => channel)
+        .filter((channel) => channel.startsWith('browser:download-'))
+    ).toEqual(['browser:download-requested', 'browser:download-finished'])
     expect(rendererSendMock).toHaveBeenCalledWith(
       'browser:download-finished',
       expect.objectContaining({
@@ -414,6 +424,7 @@ describe('browserManager', () => {
     const guest = {
       id: 420,
       isDestroyed: () => false,
+      isCurrentlyAudible: () => false,
       getType: () => 'webview',
       on: guestOnMock,
       off: guestOffMock,
@@ -434,10 +445,12 @@ describe('browserManager', () => {
     getDownloadItemEventHandler(item, 'on', 'updated')?.(event, 'interrupted')
     await new Promise<void>((resolve) => setImmediate(resolve))
     expect(item.cancel).toHaveBeenCalledTimes(1)
-    expect(rendererSendMock.mock.calls.map(([channel]) => channel)).toEqual([
-      'browser:download-requested',
-      'browser:download-finished'
-    ])
+    // Registration also reports audio state; only download sends matter here.
+    expect(
+      rendererSendMock.mock.calls
+        .map(([channel]) => channel)
+        .filter((channel) => channel.startsWith('browser:download-'))
+    ).toEqual(['browser:download-requested', 'browser:download-finished'])
     expect(rendererSendMock).toHaveBeenCalledWith(
       'browser:download-finished',
       expect.objectContaining({ status: 'failed', error: 'Download was interrupted.' })

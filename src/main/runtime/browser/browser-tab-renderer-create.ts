@@ -13,7 +13,7 @@ export async function createBrowserTabInRenderer(
   /** Used only when `worktreeId` is unset and no workspace is active in the renderer. */
   fallbackWorktreeId?: string
 ): Promise<{ browserPageId: string }> {
-  const win = host.getAuthoritativeWindow()
+  const rendererWebContents = host.getAuthoritativeWindow().webContents
   const requestId = randomUUID()
 
   const browserPageId = await new Promise<string>((resolve, reject) => {
@@ -26,7 +26,7 @@ export async function createBrowserTabInRenderer(
       event: Electron.IpcMainEvent,
       reply: { requestId: string; browserPageId?: string; error?: string }
     ): void => {
-      if (event.sender !== win.webContents || reply.requestId !== requestId) {
+      if (event.sender !== rendererWebContents || reply.requestId !== requestId) {
         return
       }
       clearTimeout(timer)
@@ -38,12 +38,12 @@ export async function createBrowserTabInRenderer(
       }
     }
     ipcMain.on('browser:tabCreateReply', handler)
-    win.webContents.send('browser:requestTabCreate', {
+    rendererWebContents.send('browser:requestTabCreate', {
       requestId,
       url,
       worktreeId,
       ...(requestedPageId ? { browserPageId: requestedPageId } : {}),
-      // Why: keep these undefined (not null) when no profile is chosen so the renderer still applies default-profile inheritance.
+      // undefined preserves renderer default-profile inheritance; null would override it.
       sessionProfileId: profileId,
       sessionPartition,
       activate,

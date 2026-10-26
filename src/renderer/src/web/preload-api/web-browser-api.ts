@@ -13,7 +13,7 @@ function desktopOnlyExtensionsResult(): { ok: false; error: string } {
 }
 
 export function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> {
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: installWebPreloadApi wraps this in withFallback, which answers any member left out here.
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a partial stub; withFallback in web-preload-api answers every browser member it omits.
   return {
     registerGuest: () => Promise.resolve(false),
     isGuestRegistered: () => Promise.resolve(false),
@@ -34,6 +34,7 @@ export function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> 
     onDownloadProgress: () => noopUnsubscribe,
     onDownloadFinished: () => noopUnsubscribe,
     onContextMenuRequested: () => noopUnsubscribe,
+    onTargetUrlChanged: () => noopUnsubscribe,
     onContextMenuDismissed: () => noopUnsubscribe,
     onNavigationUpdate: () => noopUnsubscribe,
     onActivateView: () => noopUnsubscribe,
@@ -76,6 +77,7 @@ export function createBrowserApi(): NonNullable<Partial<PreloadApi>['browser']> 
     onGrabModeToggle: () => noopUnsubscribe,
     onGrabActionShortcut: () => noopUnsubscribe,
     sessionListProfiles: () => Promise.resolve([]),
+    onSessionProfilesChanged: () => noopUnsubscribe,
     // Web clients render remote workspaces through the server; no local SSH routing exists.
     prepareSshWorkspacePartition: () =>
       Promise.reject(new Error('browser_local_route_unavailable')),
