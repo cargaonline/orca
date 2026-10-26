@@ -28,7 +28,11 @@ import {
 } from './wsl-host-add-admission'
 import type { WslOrcadConnection } from './wsl-orcad-connection'
 import { registerWslHost } from './wsl-host-registration'
-import { rememberWslHostsToWake } from './wsl-host-early-wake'
+import {
+  forgetWslHostToWake,
+  forgetWslHostsToWake,
+  rememberWslHostsToWake
+} from './wsl-host-early-wake'
 import type { WslOrcadConnectionStatus } from './wsl-orcad-connection-status'
 
 /** `stopped` and `unreachable` rest on a confirmed running list; `unavailable` could not read it. */
@@ -189,6 +193,7 @@ export class WslHostService {
         await connector.releaseHolder(record.distro)
       }
       removeWslHostEnvironment(this.deps.userDataPath(), environmentId)
+      forgetWslHostToWake(this.deps.userDataPath(), record.distro)
       this.visible.delete(environmentId)
       this.parked.delete(environmentId)
     } finally {
@@ -212,7 +217,7 @@ export class WslHostService {
       return
     }
     this.disableGeneration += 1
-    rememberWslHostsToWake(this.deps.userDataPath(), [])
+    forgetWslHostsToWake(this.deps.userDataPath())
     for (const record of this.records()) {
       await connector.disconnect(record.distro)
       await connector.releaseHolder(record.distro)
