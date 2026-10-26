@@ -5,6 +5,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import ProjectCombobox from '@/components/new-workspace/ProjectCombobox'
 import RunTargetCombobox from '@/components/new-workspace/RunTargetCombobox'
 import { translate } from '@/i18n/i18n'
+import MultiProjectChips from './MultiProjectChips'
+import MultiProjectPicker from './MultiProjectPicker'
+import { getExecutionHostLabel } from '../../../../shared/execution-host'
 import type {
   EphemeralVmRecipeOption,
   NeedsProjectHostOption,
@@ -31,6 +34,7 @@ type NewWorkspaceComposerProjectSectionProps = Pick<
   | 'onEphemeralVmRecipeChange'
   | 'selectedEphemeralVmRecipeId'
   | 'ephemeralVmRecipeError'
+  | 'multiRepo'
 > & {
   disabled?: boolean
   projectDescriptionId: string
@@ -75,6 +79,7 @@ export function NewWorkspaceComposerProjectSection({
   handleConnectRunTargetHost,
   handleSetLocation,
   ephemeralVmRecipeError,
+  multiRepo,
   selectedRepoRequiresConnection,
   selectedRepoConnectionId,
   selectedRepoConnectInProgress,
@@ -83,6 +88,8 @@ export function NewWorkspaceComposerProjectSection({
   connectButtonLabel,
   selectedProjectName
 }: NewWorkspaceComposerProjectSectionProps): React.JSX.Element {
+  const hostChoiceCount = new Set((projectHostSetupOptions ?? []).map((option) => option.hostId))
+    .size
   return (
     <fieldset disabled={disabled} className="space-y-1">
       <div className="space-y-1">
@@ -115,20 +122,72 @@ export function NewWorkspaceComposerProjectSection({
           ) : null}
         </div>
         <div className="space-y-1" data-contextual-tour-target="workspace-creation-project">
-          <ProjectCombobox
-            options={projectOptions}
-            value={selectedProjectId}
-            onValueChange={onProjectChange}
-            onValueSelected={focusNameInput}
-            onAddProject={onAddProject}
-            placeholder={
-              projectPlaceholder ??
-              translate('auto.components.NewWorkspaceComposerCard.dccd26d4e4', 'Choose project')
-            }
-            triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-[3px] focus:ring-ring/50"
-            invalid={Boolean(projectError)}
-            describedBy={projectDescriptionId}
-          />
+          {multiRepo?.active ? (
+            <MultiProjectChips
+              projects={multiRepo.selectedProjects}
+              resolutions={multiRepo.resolutions}
+              hostLabel={multiRepo.hostLabel}
+              onRemoveProject={multiRepo.removeProject}
+              onChooseSetup={multiRepo.chooseSetup}
+              disabled={multiRepo.creating}
+            />
+          ) : (
+            <ProjectCombobox
+              options={projectOptions}
+              value={selectedProjectId}
+              onValueChange={onProjectChange}
+              onValueSelected={focusNameInput}
+              onAddProject={onAddProject}
+              placeholder={
+                projectPlaceholder ??
+                translate('auto.components.NewWorkspaceComposerCard.dccd26d4e4', 'Choose project')
+              }
+              triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+              invalid={Boolean(projectError)}
+              describedBy={projectDescriptionId}
+            />
+          )}
+          {multiRepo && multiRepo.hostId && selectedProjectId ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <MultiProjectPicker
+                options={projectOptions}
+                setups={multiRepo.setups}
+                hostId={multiRepo.hostId}
+                hostLabel={multiRepo.hostLabel}
+                selectedProjectIds={multiRepo.selectedProjectIds}
+                onToggleProject={multiRepo.toggleProject}
+                onUseHost={multiRepo.useHost}
+                getHostLabel={getExecutionHostLabel}
+                onAddProject={onAddProject}
+                disabled={multiRepo.supported === false || multiRepo.creating}
+              />
+              {multiRepo.supported === false ? (
+                <span className="text-[11px] text-muted-foreground">
+                  {translate(
+                    'auto.components.newWorkspace.multiRepo.updateHost',
+                    'Update the host to create across repos'
+                  )}
+                </span>
+              ) : null}
+              {multiRepo.sameAsLast && multiRepo.sameAsLastLabel ? (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="xs"
+                  onClick={() => {
+                    multiRepo.applySameAsLast()
+                    focusNameInput()
+                  }}
+                >
+                  {translate(
+                    'auto.components.newWorkspace.multiRepo.sameAsLast',
+                    'Same as last time: {{projects}}',
+                    { projects: multiRepo.sameAsLastLabel }
+                  )}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
           {projectError ? (
             <p id={projectDescriptionId} className="text-[11px] text-destructive">
               {projectError}
@@ -144,10 +203,21 @@ export function NewWorkspaceComposerProjectSection({
           ) : null}
         </div>
       </div>
-      {shouldShowRunTargetPicker ? (
+      {multiRepo?.active &&
+      multiRepo.hostId &&
+      (!shouldShowRunTargetPicker || hostChoiceCount <= 1) ? (
         <div className="space-y-1 pt-3">
+          <span className="block min-w-0 truncate text-xs font-medium text-muted-foreground">
+            {workspaceHostLabel()}
+          </span>
+          <p className="text-sm text-foreground">{multiRepo.hostLabel}</p>
+        </div>
+      ) : shouldShowRunTargetPicker ? (
+        <div className="space-y-1 pt-3" data-multi-repo-host-field="true">
           <label className="block min-w-0 truncate text-xs font-medium text-muted-foreground">
-            {translate('auto.components.NewWorkspaceComposerCard.runOn', 'Run on')}
+            {multiRepo?.active
+              ? workspaceHostLabel()
+              : translate('auto.components.NewWorkspaceComposerCard.runOn', 'Run on')}
           </label>
           <RunTargetCombobox
             hostOptions={projectHostSetupOptions ?? []}
@@ -205,4 +275,8 @@ export function NewWorkspaceComposerProjectSection({
       ) : null}
     </fieldset>
   )
+}
+
+function workspaceHostLabel(): string {
+  return translate('auto.components.newWorkspace.multiRepo.workspaceHost', 'Workspace host')
 }

@@ -18970,7 +18970,12 @@
           "branchDiffersOne": "Branch differs in 1 project",
           "branchDiffers": "Branch differs in {{n}} projects",
           "branchInAll": "Branch {{name}} in all {{n}} projects",
-          "createFailed": "Workspace creation failed"
+          "createFailed": "Workspace creation failed",
+          "mixedHosts": "Selected projects span more than one host. Pick a host to continue.",
+          "chooseHost": "Choose host",
+          "updateHost": "Update the host to create across repos",
+          "sameAsLast": "Same as last time: {{projects}}",
+          "workspaceHost": "Workspace host"
         }
       }
     },
