@@ -1,5 +1,4 @@
 /** C7: persist WSL hosts and connect for explicit Add/Connect or visible project/terminal demand. Never boot stopped distros for background work. */
-import { errorMessage } from '../../shared/error-message'
 import { setWslHostPendingStop } from '../../shared/runtime-environment-wsl-host-store'
 import {
   readWslHostDeployments,
@@ -24,7 +23,12 @@ import {
 } from './wsl-host-add-admission'
 import type { WslOrcadConnection } from './wsl-orcad-connection'
 import { registerWslHost } from './wsl-host-registration'
-import { removeWslHostServer, type WslHostRemoval } from './wsl-host-removal'
+import {
+  readdPendingWslHost,
+  removeWslHostServer,
+  startupHolderPolicy,
+  type WslHostRemoval
+} from './wsl-host-removal'
 import type { WslOrcadConnectionStatus } from './wsl-orcad-connection-status'
 
 /** The WSL side the service drives: C3 holder, C5 connections, C6 liveness (or an e2e fake). */
@@ -42,15 +46,13 @@ export type WslHostConnector = {
   disconnect(distro: string): Promise<void>
   /** Ends the host's terminals, orcad and its terminal daemon; never boots a stopped distro. */
   stopServer(distro: string, environmentId: string): Promise<WslHostServerStop>
-  /** Registry and `--list --running` only, so it never boots the distro. */
-  distroPresence(distro: string, distroId?: string): Promise<WslDistroPresence>
+  /** By name or, after a rename, by GUID; null when the registry can't be read. Never boots. */
+  isDistroRegistered(distro: string, distroId?: string): Promise<boolean | null>
   releaseHolder(distro: string): Promise<void>
   /** Startup: keeps the holders an earlier run left and releases those `isWanted` refuses. */
   adoptHolders(isWanted: (distro: string) => boolean): Promise<void>
   dispose(): Promise<void>
 }
-
-export type WslDistroPresence = 'running' | 'stopped' | 'unregistered' | 'unverifiable'
 
 export type WslHostServiceDependencies = {
   userDataPath: () => string
@@ -144,16 +146,12 @@ export class WslHostService {
     }
     const unfinishedRemoval = this.recordForDistro(args.distro)
     if (unfinishedRemoval?.pendingStop) {
-      // Adding it again keeps the host its unfinished Remove left listed.
       const { environmentId } = unfinishedRemoval
-      return this.connect(environmentId).then(
-        (): WslHostAddResult => ({ ok: true, environmentId }),
-        (error: unknown): WslHostAddResult => ({
-          ok: false,
-          kind: 'failed',
-          message: errorMessage(error)
-        })
-      )
+      return readdPendingWslHost(args, {
+        listDistros: () => this.wsl.listDistros(),
+        keep: () => this.connect(environmentId, { withdrawPendingRemoval: true }),
+        environmentId
+      })
     }
     const operation = registerWslHost(
       {
@@ -216,10 +214,16 @@ export class WslHostService {
     }
   }
 
-  /** The user asked for this host: may boot its distro. An intent retries or forces an update. */
+  /**
+   * The user asked for this host: may boot its distro. An intent retries or forces an update.
+   * Only the user's own Connect or Add withdraws an unfinished Remove; any other caller is refused.
+   */
   async connect(
     environmentId: string,
-    options: { intent?: WslHostConnectIntent } = {}
+    {
+      withdrawPendingRemoval = false,
+      ...options
+    }: { intent?: WslHostConnectIntent; withdrawPendingRemoval?: boolean } = {}
   ): Promise<void> {
     const record = this.recordForEnvironment(environmentId)
     if (!record) {
@@ -230,7 +234,9 @@ export class WslHostService {
       throw new Error(refusal?.message ?? WSL_HOST_REMOVING_MESSAGE)
     }
     if (record.pendingStop) {
-      // Connecting keeps the host: its unfinished Remove is withdrawn.
+      if (!withdrawPendingRemoval) {
+        throw new Error(wslHostRemovalPendingMessage(record.distro))
+      }
       setWslHostPendingStop(this.deps.userDataPath(), environmentId, null)
     }
     this.wsl.forgetPairingFailures?.(environmentId)
@@ -301,8 +307,7 @@ export class WslHostService {
         this.setStatus(record, { state: 'closed' })
       }
     }
-    const canRun = this.canRun()
-    await this.connector.adoptHolders((distro) => canRun && this.isKnownDistro(distro))
+    await this.connector.adoptHolders(startupHolderPolicy(this.deps.userDataPath(), this.canRun()))
   }
 
   /** What the UI shows before offering any WSL host action. */
