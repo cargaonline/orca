@@ -242,11 +242,22 @@ describe('native chat Markdown image preview', () => {
       mocks.openDetectedFilePath.mockClear()
       await act(async () => useAppStore.setState({ unifiedTabsByWorktree: {} }))
       expect(screen.queryByRole('img', { name: 'Chart' })).toBeNull()
-      expect(screen.getByRole('status')).toHaveTextContent('Preview unavailable')
-      fireEvent.click(screen.getByRole('button', { name: 'View image: Chart' }), {
+      const unavailableTrigger = screen.getByRole('button', { name: 'View image: Chart' })
+      expect(unavailableTrigger).toHaveTextContent('Chart')
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(mocks.readRuntimeFilePreview).toHaveBeenCalledTimes(2)
+      fireEvent.click(unavailableTrigger, {
         ctrlKey: true,
         metaKey: true
       })
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(mocks.openDetectedFilePath).not.toHaveBeenCalled()
+      expect(mocks.readRuntimeFilePreview).toHaveBeenCalledTimes(2)
+      fireEvent.click(unavailableTrigger)
+      const unavailableDialog = screen.getByRole('dialog', { name: 'Chart' })
+      expect(within(unavailableDialog).getByRole('status')).toHaveTextContent('Preview unavailable')
+      expect(within(unavailableDialog).queryByRole('img')).toBeNull()
+      expect(within(unavailableDialog).queryByRole('button', { name: 'File actions' })).toBeNull()
       expect(mocks.openDetectedFilePath).not.toHaveBeenCalled()
       expect(mocks.readRuntimeFilePreview).toHaveBeenCalledTimes(2)
     } finally {
