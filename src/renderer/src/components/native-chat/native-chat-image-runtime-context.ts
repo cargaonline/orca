@@ -7,7 +7,10 @@ import {
   resolveWorktreeOperationRouteResult,
   type WorktreeOperationRouteResolution
 } from '@/lib/worktree-operation-route'
-import { resolveNativeChatFileLinkContext } from './native-chat-file-link'
+import {
+  createNativeChatTabOwnerSelector,
+  resolveNativeChatFileLinkContext
+} from './native-chat-file-link'
 import { captureDirectSshMutationExpectation } from '@/lib/ssh-mutation-expectation'
 import { parseExecutionHostId, toRuntimeExecutionHostId } from '../../../../shared/execution-host'
 import { isFloatingWorkspaceId } from '../../../../shared/floating-workspace-worktree'
@@ -148,7 +151,41 @@ export function resolveNativeChatImageRuntimeContext(
   return context
 }
 
+/** Every mounted chat holds this subscription, so it reads only its own workspace's tabs. */
+export function createNativeChatImageOwnerSelector(tabId: string): (state: AppState) => OwnerState {
+  const selectOwner = createNativeChatTabOwnerSelector(tabId)
+  const narrowTerminalTabs = createOwnerWorkspaceNarrower<AppState['tabsByWorktree'][string]>()
+  const narrowUnifiedTabs =
+    createOwnerWorkspaceNarrower<AppState['unifiedTabsByWorktree'][string]>()
+  return (state) => {
+    const owner = selectOwner(state)
+    return {
+      ...selectNativeChatImageOwnerState(state),
+      tabsByWorktree: narrowTerminalTabs(state.tabsByWorktree, owner),
+      unifiedTabsByWorktree: narrowUnifiedTabs(state.unifiedTabsByWorktree, owner)
+    }
+  }
+}
+
+// Keep the narrowed map's identity until the owner or its own tab list changes.
+function createOwnerWorkspaceNarrower<T>() {
+  let lastOwner: string | null = null
+  let lastTabs: T | undefined
+  let narrowed: Record<string, T> = {}
+  return (tabsByWorkspace: Record<string, T>, owner: string | null): Record<string, T> => {
+    // Own entries only: a paired host's workspace id can name an `Object.prototype` member.
+    const tabs = owner && Object.hasOwn(tabsByWorkspace, owner) ? tabsByWorkspace[owner] : undefined
+    if (owner !== lastOwner || tabs !== lastTabs) {
+      lastOwner = owner
+      lastTabs = tabs
+      narrowed = owner && tabs ? { [owner]: tabs } : {}
+    }
+    return narrowed
+  }
+}
+
 export function useNativeChatImageRuntimeContext(tabId: string): NativeChatImageRuntimeContext {
-  const ownerState = useAppStore(useShallow(selectNativeChatImageOwnerState))
+  const selectOwnerState = useMemo(() => createNativeChatImageOwnerSelector(tabId), [tabId])
+  const ownerState = useAppStore(useShallow(selectOwnerState))
   return useMemo(() => resolveNativeChatImageRuntimeContext(ownerState, tabId), [ownerState, tabId])
 }

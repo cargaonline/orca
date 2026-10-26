@@ -6,6 +6,7 @@ import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import type { Tab } from '../../../../shared/tab-types'
 import { FLOATING_TERMINAL_WORKTREE_ID, getDefaultSettings } from '../../../../shared/constants'
 import {
+  createNativeChatImageOwnerSelector,
   resolveNativeChatImageRuntimeContext,
   selectNativeChatImageOwnerState
 } from './native-chat-image-runtime-context'
@@ -55,6 +56,21 @@ describe('resolveNativeChatImageRuntimeContext', () => {
       agentStatusByPaneKey: {} as AppState['agentStatusByPaneKey']
     })
 
+    expect(shallow(second, first)).toBe(true)
+  })
+
+  it("keeps tab changes in other workspaces out of a chat's owner inputs", () => {
+    const storeState = state()
+    const select = createNativeChatImageOwnerSelector('tab-1')
+    const first = select(storeState)
+    const otherWorkspaceTab = { ...storeState.tabsByWorktree['wt-1'][0], id: 'tab-2' }
+    const second = select({
+      ...storeState,
+      tabsByWorktree: { ...storeState.tabsByWorktree, 'wt-2': [otherWorkspaceTab] },
+      unifiedTabsByWorktree: { 'wt-2': [] }
+    })
+
+    expect(first.tabsByWorktree).toEqual({ 'wt-1': storeState.tabsByWorktree['wt-1'] })
     expect(shallow(second, first)).toBe(true)
   })
 
@@ -134,14 +150,16 @@ describe('resolveNativeChatImageRuntimeContext', () => {
     }
 
     expect(resolveNativeChatImageRuntimeContext(floatingState, 'floating-chat-1')).toBeNull()
+    // Through the per-chat selector the hook subscribes with.
+    const selectOwnerState = createNativeChatImageOwnerSelector('floating-chat-1')
     expect(
       resolveNativeChatImageRuntimeContext(
-        {
+        selectOwnerState({
           ...floatingState,
           structuredSessionLaunchDirectoryByTabId: {
             'floating-chat-1': { sessionId: 'session-1', launchDirectory: '/home/me/pinned' }
           }
-        },
+        }),
         'floating-chat-1'
       )
     ).toMatchObject({
