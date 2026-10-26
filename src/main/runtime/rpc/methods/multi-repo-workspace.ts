@@ -1,3 +1,4 @@
+import { MultiRepoWorkspaceError } from '../../../../shared/multi-repo-workspace'
 import { defineMethod } from '../core'
 import { resolveRpcWorkspaceCreatorProvenance } from '../workspace-creator-context'
 import { getMultiRepoWorkspaceService } from '../../multi-repo-workspace/multi-repo-workspace-runtime-port'
@@ -75,6 +76,15 @@ export const MULTI_REPO_WORKSPACE_METHODS = [
     name: 'multiRepoWorkspace.delete',
     permission: 'workspace',
     params: MultiRepoWorkspaceDelete,
-    handler: async (params, { runtime }) => getMultiRepoWorkspaceService(runtime).delete(params)
+    handler: async (params, context) => {
+      // A phone can only delete clean members; discarding changes needs the desktop.
+      if (context.pairedDeviceId && (params.forceMemberIds?.length ?? 0) > 0) {
+        throw new MultiRepoWorkspaceError(
+          'multi_repo_force_not_allowed',
+          'Discarding changes needs the desktop app.'
+        )
+      }
+      return getMultiRepoWorkspaceService(context.runtime).delete(params)
+    }
   })
 ]

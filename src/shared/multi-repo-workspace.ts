@@ -87,6 +87,7 @@ export const MULTI_REPO_WORKSPACE_ERROR_CODES = [
   'multi_repo_root_unavailable',
   'multi_repo_delete_force_not_named',
   'multi_repo_create_in_progress',
+  'multi_repo_force_not_allowed',
   'multi_repo_has_members'
 ] as const
 export type MultiRepoWorkspaceErrorCode = (typeof MULTI_REPO_WORKSPACE_ERROR_CODES)[number]
