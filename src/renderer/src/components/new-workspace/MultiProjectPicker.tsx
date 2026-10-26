@@ -208,8 +208,7 @@ export default function MultiProjectPicker({
                     >
                       {translate(
                         'auto.components.newWorkspace.multiRepo.unavailableOnHost',
-                        'Unavailable on {{host}}',
-                        { host: hostLabel }
+                        'Unavailable on this host'
                       )}
                     </div>
                     {unavailable.map(renderRow)}

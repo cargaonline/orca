@@ -18,12 +18,12 @@ export function getMultiRepoUnavailableCopy(
     case 'direct_ssh':
       return translate(
         'auto.components.newWorkspace.multiRepo.directSshUnsupported',
-        'Direct SSH setups do not support multi-repo'
+        "Direct SSH setups don't support multi-repo"
       )
     case 'wsl':
       return translate(
         'auto.components.newWorkspace.multiRepo.wslUnsupported',
-        'WSL setups do not support multi-repo'
+        "WSL setups don't support multi-repo"
       )
     case 'folder':
       return translate(

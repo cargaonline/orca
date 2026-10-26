@@ -18956,10 +18956,10 @@
           "selectedProjects": "Selected projects",
           "useHost": "Use {{host}}",
           "addAnotherGitProject": "Add another git project to create a workspace across repos.",
-          "unavailableOnHost": "Unavailable on {{host}}",
+          "unavailableOnHost": "Unavailable on this host",
           "noSetupOnHost": "No setup on {{host}}",
-          "directSshUnsupported": "Direct SSH setups do not support multi-repo",
-          "wslUnsupported": "WSL setups do not support multi-repo",
+          "directSshUnsupported": "Direct SSH setups don't support multi-repo",
+          "wslUnsupported": "WSL setups don't support multi-repo",
           "folderProject": "Folder project, no git worktrees",
           "setupNotReady": "Setup on {{host}} is not ready",
           "limitReached": "A workspace holds at most 12 projects"
