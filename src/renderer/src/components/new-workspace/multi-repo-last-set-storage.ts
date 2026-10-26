@@ -3,19 +3,23 @@ import { recordCreateInLastSet, type LastMultiRepoSet } from './multi-repo-compo
 // Device-local, like the Jira view mode, rather than synced through ui.set: the host never sees it.
 const STORAGE_KEY = 'orca.new-workspace.last-multi-repo-set.v1'
 
-function isLastMultiRepoSet(value: unknown): value is LastMultiRepoSet {
+function toLastMultiRepoSet(value: unknown): LastMultiRepoSet | null {
   if (typeof value !== 'object' || value === null) {
-    return false
+    return null
   }
-  const candidate = value as Partial<LastMultiRepoSet>
-  return (
-    Array.isArray(candidate.projectIds) &&
-    candidate.projectIds.length > 0 &&
-    candidate.projectIds.every((id) => typeof id === 'string' && id !== '') &&
-    typeof candidate.singleCreatesSince === 'number' &&
-    Number.isInteger(candidate.singleCreatesSince) &&
-    candidate.singleCreatesSince >= 0
-  )
+  const projectIds: unknown = Reflect.get(value, 'projectIds')
+  const singleCreatesSince: unknown = Reflect.get(value, 'singleCreatesSince')
+  if (
+    !Array.isArray(projectIds) ||
+    projectIds.length === 0 ||
+    typeof singleCreatesSince !== 'number' ||
+    !Number.isInteger(singleCreatesSince) ||
+    singleCreatesSince < 0
+  ) {
+    return null
+  }
+  const ids = projectIds.filter((id): id is string => typeof id === 'string' && id !== '')
+  return ids.length === projectIds.length ? { projectIds: ids, singleCreatesSince } : null
 }
 
 export function loadLastMultiRepoSet(): LastMultiRepoSet | null {
@@ -24,8 +28,7 @@ export function loadLastMultiRepoSet(): LastMultiRepoSet | null {
     if (!raw) {
       return null
     }
-    const parsed: unknown = JSON.parse(raw)
-    return isLastMultiRepoSet(parsed) ? parsed : null
+    return toLastMultiRepoSet(JSON.parse(raw))
   } catch {
     return null
   }

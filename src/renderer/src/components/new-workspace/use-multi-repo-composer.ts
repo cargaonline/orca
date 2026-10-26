@@ -59,7 +59,8 @@ export function useMultiRepoComposer({
   const [setupOverrides, setSetupOverrides] = useState<Record<string, string | undefined>>({})
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<WorkspaceCreateErrorDisplay | null>(null)
-  const [mixedHostsError, setMixedHostsError] = useState(false)
+  // Keyed by the host and selection it described, so a change of either clears it without an effect.
+  const [mixedHostsKey, setMixedHostsKey] = useState<string | null>(null)
   const [supported, setSupported] = useState<boolean | null>(null)
   const [lastSet] = useState(loadLastMultiRepoSet)
   const submittingRef = useRef(false)
@@ -106,10 +107,8 @@ export function useMultiRepoComposer({
     [active, hostId, lastSet, selectedProjectIds, setups]
   )
 
-  // A host switch re-resolves everything; a stale error must not outlive the selection it described.
-  useEffect(() => {
-    setMixedHostsError(false)
-  }, [hostId, selectedProjectIds])
+  const stateKey = `${hostId ?? ''}|${selectedProjectIds.join(',')}`
+  const mixedHostsError = mixedHostsKey === stateKey
 
   const toggleProject = useCallback(
     (projectId: string): void => {
@@ -182,13 +181,13 @@ export function useMultiRepoComposer({
     )
     if (!built.ok) {
       // The picker never offers a mixed selection; reaching here is a revalidation bug.
-      setMixedHostsError(built.reason === 'mixed_hosts')
+      setMixedHostsKey(built.reason === 'mixed_hosts' ? stateKey : null)
       return
     }
     submittingRef.current = true
     setCreating(true)
     setCreateError(null)
-    setMixedHostsError(false)
+    setMixedHostsKey(null)
     try {
       const folderWorkspace = await createMultiRepoWorkspace({
         name: name.trim(),
@@ -204,7 +203,7 @@ export function useMultiRepoComposer({
     } catch (error) {
       const parsed = parseMultiRepoWorkspaceError(error) ?? error
       if (parsed instanceof MultiRepoWorkspaceError && parsed.code === 'multi_repo_mixed_hosts') {
-        setMixedHostsError(true)
+        setMixedHostsKey(stateKey)
       } else {
         setCreateError({
           title: translate(
@@ -229,7 +228,8 @@ export function useMultiRepoComposer({
     quickAgent,
     selectedProjectIds,
     setupOverrides,
-    setups
+    setups,
+    stateKey
   ])
 
   const selectedProjects = useMemo(
