@@ -39,9 +39,7 @@ export function resolveWorkspaceRepoTarget(
       continue
     }
     const targetIndex =
-      selection.kind === 'index'
-        ? selection.index
-        : (currentIndex + (selection.kind === 'next' ? 1 : -1) + entries.length) % entries.length
+      (currentIndex + (selection.kind === 'next' ? 1 : -1) + entries.length) % entries.length
     const workspaceKey = entries[targetIndex]
     return workspaceKey && workspaceKey !== activeWorktreeId
       ? { workspaceKey, folderWorkspace }

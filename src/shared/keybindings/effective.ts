@@ -191,7 +191,6 @@ const MAIN_PROCESS_INTERCEPTED_ACTIONS: Partial<
   'tab.previousRecent': 'beforeBrowserChords',
   'workspace.selectByIndex': 'afterBrowserChords',
   'tab.selectByIndex': 'afterBrowserChords',
-  'workspace.selectRepoByIndex': 'afterBrowserChords',
   'workspace.nextRepo': 'afterBrowserChords',
   'workspace.previousRepo': 'afterBrowserChords',
   'tab.openQuickCommandsMenu': 'afterBrowserChords'

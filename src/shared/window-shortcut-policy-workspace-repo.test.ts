@@ -13,17 +13,8 @@ describe('workspace repo shortcuts', () => {
     ...mods
   })
 
-  it('binds Cmd+Option+1-9 on macOS only', () => {
-    expect(resolveWindowShortcutAction(chord('3', { meta: true, alt: true }), 'darwin')).toEqual({
-      type: 'selectWorkspaceRepo',
-      selection: { kind: 'index', index: 2 }
-    })
-    expect(
-      resolveWindowShortcutAction(chord('3', { control: true, alt: true }), 'win32')
-    ).toBeNull()
-    expect(
-      resolveWindowShortcutAction(chord('3', { control: true, alt: true }), 'linux')
-    ).toBeNull()
+  it('does not bind Cmd+Option+digits to a repo, which would shadow other chords', () => {
+    expect(resolveWindowShortcutAction(chord('3', { meta: true, alt: true }), 'darwin')).toBeNull()
   })
 
   it('resolves remapped next and previous repo chords', () => {

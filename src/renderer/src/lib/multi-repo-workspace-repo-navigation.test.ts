@@ -54,10 +54,9 @@ describe('resolveWorkspaceRepoTarget', () => {
     expect(resolve('folder:f1', { kind: 'previous' })).toBe('wt-c')
   })
 
-  it('maps index 0 to the workspace folder and skips unready members', () => {
-    expect(resolve('wt-c', { kind: 'index', index: 0 })).toBe('folder:f1')
-    expect(resolve('folder:f1', { kind: 'index', index: 2 })).toBe('wt-c')
-    expect(resolve('folder:f1', { kind: 'index', index: 3 })).toBeUndefined()
+  it('skips members that are not ready', () => {
+    expect(resolve('wt-a', { kind: 'next' })).toBe('wt-c')
+    expect(resolve('wt-c', { kind: 'previous' })).toBe('wt-a')
   })
 
   it('does nothing outside a multi-repo workspace', () => {

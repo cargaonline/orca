@@ -91,8 +91,7 @@ export function matchFloatingWorkspacePanelShortcut(
   }
   const index =
     matchKeybindingDigitIndex('workspace.selectByIndex', event, platform, keybindings, options) ??
-    matchKeybindingDigitIndex('tab.selectByIndex', event, platform, keybindings, options) ??
-    matchKeybindingDigitIndex('workspace.selectRepoByIndex', event, platform, keybindings, options)
+    matchKeybindingDigitIndex('tab.selectByIndex', event, platform, keybindings, options)
   if (index !== null) {
     return { kind: 'index', index }
   }

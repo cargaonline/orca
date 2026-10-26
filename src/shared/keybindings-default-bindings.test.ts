@@ -318,20 +318,14 @@ describe('keybindings', () => {
     expect(getEffectiveKeybindingsForAction(maximizeAction, 'win32')).toEqual([])
   })
 
-  it('assigns the repo-in-workspace digit default only on macOS and leaves next/previous unbound', () => {
-    expect(getEffectiveKeybindingsForAction('workspace.selectRepoByIndex', 'darwin')).toEqual([
-      'Mod+Alt+1'
-    ])
-    for (const platform of ['linux', 'win32'] as const) {
-      expect(getEffectiveKeybindingsForAction('workspace.selectRepoByIndex', platform)).toEqual([])
-    }
+  it('leaves next/previous repo in workspace unbound by default', () => {
     for (const platform of ['darwin', 'linux', 'win32'] as const) {
       expect(getEffectiveKeybindingsForAction('workspace.nextRepo', platform)).toEqual([])
       expect(getEffectiveKeybindingsForAction('workspace.previousRepo', platform)).toEqual([])
       expect(
         findKeybindingConflicts(platform, undefined, {
           includeMainProcessInterception: true,
-          relevantActionIds: ['workspace.selectRepoByIndex']
+          relevantActionIds: ['workspace.nextRepo', 'workspace.previousRepo']
         })
       ).toEqual([])
     }
