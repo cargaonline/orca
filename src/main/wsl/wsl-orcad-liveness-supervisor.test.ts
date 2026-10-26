@@ -205,6 +205,18 @@ describe('WslOrcadLivenessSupervisor', () => {
     expect(h.supervisor.isSettling('Ubuntu')).toBe(false)
   })
 
+  it('reports settling after a clean exit too (code 0 from wsl --shutdown)', async () => {
+    const h = harness({ visible: true })
+    await h.supervisor.connect('Ubuntu')
+    h.state.running = { status: 'confirmed', distros: ['Ubuntu'] }
+    h.lastWatch().exit(0)
+    // The verdict pass itself finishes at once; the window after the exit still holds.
+    await h.advance(0)
+    expect(h.supervisor.isSettling('Ubuntu')).toBe(true)
+    await h.advance(10_000)
+    expect(h.supervisor.isSettling('Ubuntu')).toBe(false)
+  })
+
   it('never boots a stopped distro for background work; the gate resumes it once running', async () => {
     const h = harness({ visible: false })
     await h.supervisor.connect('Ubuntu')
