@@ -1,0 +1,277 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAppStore } from '@/store'
+import { activateAndRevealWorkspace } from '@/lib/worktree-activation'
+import { ipcOrRuntimeTargetForHostId } from '@/runtime/runtime-client-target'
+import { translate } from '@/i18n/i18n'
+import { createBrowserUuid } from '@/lib/browser-uuid'
+import { getExecutionHostLabel, type ExecutionHostId } from '../../../../shared/execution-host'
+import { MultiRepoWorkspaceError } from '../../../../shared/multi-repo-workspace'
+import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
+import type { TuiAgent } from '../../../../shared/tui-agent'
+import type { NewWorkspaceProjectOption } from '@/lib/new-workspace-project-options'
+import type { WorkspaceCreateErrorDisplay } from '@/lib/workspace-create-error-format'
+import { multiRepoWorkspaceSupportedOnTarget } from '@/store/slices/multi-repo-workspace/multi-repo-workspace-capability'
+import { parseMultiRepoWorkspaceError } from '@/store/slices/multi-repo-workspace/multi-repo-workspace-transport'
+import {
+  buildMultiRepoCreateMembers,
+  recordCreateInLastSet,
+  resolveSameAsLastTime
+} from './multi-repo-composer-model'
+import { loadLastMultiRepoSet, saveLastMultiRepoSet } from './multi-repo-last-set-storage'
+import { resolveSelectedProjects } from './resolve-project-setup-for-host'
+import {
+  countBlockedProjects,
+  getMultiRepoCreateBlockedReason,
+  getMultiRepoPrimaryActionLabel
+} from './multi-repo-composer-status'
+import type { ReadyProjectHostOption } from './new-workspace-composer-card-props'
+import type { ProjectHostSetupOption } from '@/lib/project-host-setup-options'
+
+export type UseMultiRepoComposerInput = {
+  primaryProjectId: string | null
+  projectOptions: readonly NewWorkspaceProjectOption[]
+  projectHostSetupOptions: readonly ProjectHostSetupOption[]
+  /** Host of the Run on selection; the workspace host never derives from the chosen projects. */
+  hostId: ExecutionHostId | null
+  name: string
+  quickAgent: TuiAgent | null
+  onPrimaryProjectChange: (projectId: string) => void
+  onProjectHostSetupChange?: (setupId: string) => void
+  onCreated: () => void
+}
+
+export type MultiRepoComposerView = ReturnType<typeof useMultiRepoComposer>
+
+export function useMultiRepoComposer({
+  primaryProjectId,
+  projectOptions,
+  projectHostSetupOptions,
+  hostId,
+  name,
+  quickAgent,
+  onPrimaryProjectChange,
+  onProjectHostSetupChange,
+  onCreated
+}: UseMultiRepoComposerInput) {
+  const setups = useAppStore((state) => state.projectHostSetups)
+  const createMultiRepoWorkspace = useAppStore((state) => state.createMultiRepoWorkspace)
+  const [extraProjectIds, setExtraProjectIds] = useState<string[]>([])
+  const [setupOverrides, setSetupOverrides] = useState<Record<string, string | undefined>>({})
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<WorkspaceCreateErrorDisplay | null>(null)
+  const [mixedHostsError, setMixedHostsError] = useState(false)
+  const [supported, setSupported] = useState<boolean | null>(null)
+  const [lastSet] = useState(loadLastMultiRepoSet)
+  const submittingRef = useRef(false)
+
+  const selectedProjectIds = useMemo(
+    () =>
+      primaryProjectId
+        ? [primaryProjectId, ...extraProjectIds.filter((id) => id !== primaryProjectId)]
+        : [],
+    [primaryProjectId, extraProjectIds]
+  )
+  const active = selectedProjectIds.length >= 2
+
+  useEffect(() => {
+    if (!hostId) {
+      return
+    }
+    let cancelled = false
+    const target = ipcOrRuntimeTargetForHostId(hostId)
+    if (!target) {
+      setSupported(false)
+      return
+    }
+    void multiRepoWorkspaceSupportedOnTarget(target)
+      .then((result) => !cancelled && setSupported(result))
+      .catch(() => !cancelled && setSupported(false))
+    return () => {
+      cancelled = true
+    }
+  }, [hostId])
+
+  const resolutions = useMemo(
+    () =>
+      hostId ? resolveSelectedProjects(selectedProjectIds, hostId, setups, setupOverrides) : [],
+    [hostId, selectedProjectIds, setups, setupOverrides]
+  )
+  const blockedCount = countBlockedProjects(resolutions)
+  const blockedReason = active ? getMultiRepoCreateBlockedReason(blockedCount) : null
+  const hostLabel = hostId ? getExecutionHostLabel(hostId) : ''
+
+  const sameAsLast = useMemo(
+    () =>
+      hostId && !active ? resolveSameAsLastTime(lastSet, selectedProjectIds, hostId, setups) : null,
+    [active, hostId, lastSet, selectedProjectIds, setups]
+  )
+
+  // A host switch re-resolves everything; a stale error must not outlive the selection it described.
+  useEffect(() => {
+    setMixedHostsError(false)
+  }, [hostId, selectedProjectIds])
+
+  const toggleProject = useCallback(
+    (projectId: string): void => {
+      if (projectId === primaryProjectId) {
+        return
+      }
+      setExtraProjectIds((current) =>
+        current.includes(projectId)
+          ? current.filter((id) => id !== projectId)
+          : [...current, projectId]
+      )
+    },
+    [primaryProjectId]
+  )
+
+  const removeProject = useCallback(
+    (projectId: string): void => {
+      if (projectId === primaryProjectId) {
+        // The first chip is the composer's own project; hand the role to the next one in line.
+        const [next, ...rest] = extraProjectIds.filter((id) => id !== projectId)
+        if (next) {
+          setExtraProjectIds(rest)
+          onPrimaryProjectChange(next)
+        }
+        return
+      }
+      setExtraProjectIds((current) => current.filter((id) => id !== projectId))
+    },
+    [extraProjectIds, onPrimaryProjectChange, primaryProjectId]
+  )
+
+  const chooseSetup = useCallback((projectId: string, setupId: string): void => {
+    setSetupOverrides((current) => ({ ...current, [projectId]: setupId }))
+  }, [])
+
+  const useHost = useCallback(
+    (nextHostId: ExecutionHostId): void => {
+      const option = projectHostSetupOptions.find(
+        (candidate): candidate is ReadyProjectHostOption =>
+          candidate.kind === 'ready' && candidate.hostId === nextHostId
+      )
+      if (option) {
+        onProjectHostSetupChange?.(option.id)
+      }
+    },
+    [onProjectHostSetupChange, projectHostSetupOptions]
+  )
+
+  const applySameAsLast = useCallback((): void => {
+    if (!sameAsLast) {
+      return
+    }
+    const [first, ...rest] = sameAsLast
+    setExtraProjectIds(rest)
+    if (first && first !== primaryProjectId) {
+      onPrimaryProjectChange(first)
+    }
+  }, [onPrimaryProjectChange, primaryProjectId, sameAsLast])
+
+  const submit = useCallback(async (): Promise<void> => {
+    if (!active || !hostId || blockedCount > 0 || submittingRef.current || !name.trim()) {
+      return
+    }
+    const built = buildMultiRepoCreateMembers(
+      selectedProjectIds,
+      hostId,
+      setups,
+      setupOverrides,
+      {}
+    )
+    if (!built.ok) {
+      // The picker never offers a mixed selection; reaching here is a revalidation bug.
+      setMixedHostsError(built.reason === 'mixed_hosts')
+      return
+    }
+    submittingRef.current = true
+    setCreating(true)
+    setCreateError(null)
+    setMixedHostsError(false)
+    try {
+      const folderWorkspace = await createMultiRepoWorkspace({
+        name: name.trim(),
+        members: built.members,
+        clientMutationId: createBrowserUuid(),
+        ...(quickAgent ? { createdWithAgent: quickAgent } : {})
+      })
+      saveLastMultiRepoSet(recordCreateInLastSet(lastSet, selectedProjectIds))
+      activateAndRevealWorkspace(folderWorkspaceKey(folderWorkspace.id), {
+        navigationIntent: 'user-open'
+      })
+      onCreated()
+    } catch (error) {
+      const parsed = parseMultiRepoWorkspaceError(error) ?? error
+      if (parsed instanceof MultiRepoWorkspaceError && parsed.code === 'multi_repo_mixed_hosts') {
+        setMixedHostsError(true)
+      } else {
+        setCreateError({
+          title: translate(
+            'auto.components.newWorkspace.multiRepo.createFailed',
+            'Workspace creation failed'
+          ),
+          message: error instanceof Error ? error.message : String(error)
+        })
+      }
+    } finally {
+      submittingRef.current = false
+      setCreating(false)
+    }
+  }, [
+    active,
+    blockedCount,
+    createMultiRepoWorkspace,
+    hostId,
+    lastSet,
+    name,
+    onCreated,
+    quickAgent,
+    selectedProjectIds,
+    setupOverrides,
+    setups
+  ])
+
+  const selectedProjects = useMemo(
+    () =>
+      selectedProjectIds.flatMap((projectId) => {
+        const option = projectOptions.find(
+          (candidate) => candidate.kind === 'project' && candidate.projectId === projectId
+        )
+        return option?.kind === 'project'
+          ? [{ projectId, displayName: option.displayName, badgeColor: option.badgeColor }]
+          : []
+      }),
+    [projectOptions, selectedProjectIds]
+  )
+
+  return {
+    active,
+    supported,
+    hostId,
+    hostLabel,
+    setups,
+    selectedProjectIds,
+    selectedProjects,
+    resolutions,
+    sameAsLast,
+    sameAsLastLabel: sameAsLast
+      ? sameAsLast
+          .map((id) => projectOptions.find((o) => o.kind === 'project' && o.projectId === id))
+          .flatMap((o) => (o ? [o.displayName] : []))
+          .join(', ')
+      : null,
+    creating,
+    createError,
+    mixedHostsError,
+    blockedCount,
+    blockedReason,
+    primaryActionLabel: getMultiRepoPrimaryActionLabel(selectedProjectIds.length, creating),
+    toggleProject,
+    removeProject,
+    chooseSetup,
+    useHost,
+    applySameAsLast,
+    submit
+  }
+}

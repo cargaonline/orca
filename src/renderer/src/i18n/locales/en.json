@@ -18962,7 +18962,15 @@
           "wslUnsupported": "WSL setups don't support multi-repo",
           "folderProject": "Folder project, no git worktrees",
           "setupNotReady": "Setup on {{host}} is not ready",
-          "limitReached": "A workspace holds at most 12 projects"
+          "limitReached": "A workspace holds at most 12 projects",
+          "blockedOne": "Remove 1 project or switch host",
+          "blockedMany": "Remove {{n}} projects or switch host",
+          "creating": "Creating…",
+          "createInProjects": "Create in {{n}} projects",
+          "branchDiffersOne": "Branch differs in 1 project",
+          "branchDiffers": "Branch differs in {{n}} projects",
+          "branchInAll": "Branch {{name}} in all {{n}} projects",
+          "createFailed": "Workspace creation failed"
         }
       }
     },
