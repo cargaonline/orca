@@ -342,7 +342,12 @@ describe('native chat store subscription performance', () => {
   })
 
   it('bounds dense ordinary-workspace image work on mount and own-list rename/replace at N and 10N', () => {
-    const results = []
+    const results: {
+      mounted: number
+      mount: Work
+      updates: Work[]
+      updateRenders: number
+    }[] = []
     for (const scale of [1, 10]) {
       const data = corpus(scale, true)
       let renders = 0
