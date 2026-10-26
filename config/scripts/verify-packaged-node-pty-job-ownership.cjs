@@ -3,6 +3,7 @@ const { createRequire } = require('node:module')
 const { join } = require('node:path')
 const {
   assertNodePtyJobOwnership,
+  assertNativeHostJobOwnership,
   conptyDeniesCygwinBreakaway,
   nodePtyAddonPath,
   staleConptySourceBuildError
@@ -119,6 +120,7 @@ function verifyPackagedConptyBreakawayMarker(resourcesDir, targetArch, options =
   }
   const addonPath = loaded.path
   if (conptyDeniesCygwinBreakaway(addonPath)) {
+    assertNativeHostJobOwnership(addonPath)
     console.log(
       `[verify-packaged-node-pty] OK — win32-${architecture} loads ${addonPath}, which denies ` +
         'MSYS job breakaway'

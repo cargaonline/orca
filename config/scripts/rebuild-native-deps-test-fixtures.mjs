@@ -22,9 +22,8 @@ import { peImage } from './windows-pe-image-fixture.mjs'
  * Taken from the gate itself: a re-typed copy agrees with a stale gate by
  * construction, which is the one thing these fixtures must not do.
  */
-const { CYGWIN_BREAKAWAY_MARKER, CYGWIN_BREAKAWAY_MARKER_TEXT } = createRequire(import.meta.url)(
-  './node-pty-job-ownership.cjs'
-)
+const { CYGWIN_BREAKAWAY_MARKER, CYGWIN_BREAKAWAY_MARKER_TEXT, NATIVE_HOST_JOB_MARKER } =
+  createRequire(import.meta.url)('./node-pty-job-ownership.cjs')
 const { CREATION_TIME_FLAG } = createRequire(import.meta.url)(
   './windows-process-tree-creation-time.cjs'
 )
@@ -346,7 +345,8 @@ export function writeFakeNodePtyConptyPayload(
     join(releaseDir, 'conpty.node'),
     Buffer.concat([
       peImage({ arch }),
-      cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0)
+      cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0),
+      NATIVE_HOST_JOB_MARKER
     ])
   )
   const sourceDir = join(
@@ -370,7 +370,7 @@ export function writeFakeNodePtyConptySource(projectDir, { cygwinBreakawayDenied
   writeFileSync(
     join(sourceDir, 'conpty.cc'),
     cygwinBreakawayDenied
-      ? `for (const wchar_t* dll : {L"${CYGWIN_BREAKAWAY_MARKER_TEXT}", L"cygwin1.dll"}) {}\n`
+      ? `for (const wchar_t* dll : {L"${CYGWIN_BREAKAWAY_MARKER_TEXT}", L"cygwin1.dll"}) {}\n"assignCurrentProcessToStrictJob";\n`
       : 'JOB_OBJECT_LIMIT_BREAKAWAY_OK\n'
   )
 }
@@ -383,7 +383,8 @@ function writeFakeNodePtyAddon(nodePtyDir, nativeDir, { cygwinBreakawayDenied })
       join(addonDir, `${nativeName}.node`),
       Buffer.concat([
         peImage({ arch: process.arch === 'arm64' ? 'arm64' : 'x64' }),
-        cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0)
+        cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0),
+        NATIVE_HOST_JOB_MARKER
       ])
     )
   }
@@ -412,7 +413,8 @@ exports.loadNativeModule = function loadNativeModule(nativeName) {
         ? {
             listJobProcessIds() {},
             terminateJob() {},
-            assignCurrentProcessToJob() {}
+            assignCurrentProcessToJob() {},
+            assignCurrentProcessToStrictJob() {}
           }
         : {})
     }
@@ -532,7 +534,10 @@ export function writePatchedNodePtyBuildArtifacts(
   if (process.platform === 'win32') {
     writeFileSync(
       join(buildDir, 'conpty.node'),
-      cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0)
+      Buffer.concat([
+        cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0),
+        NATIVE_HOST_JOB_MARKER
+      ])
     )
     mkdirSync(join(buildDir, 'conpty'), { recursive: true })
     writeFileSync(join(buildDir, 'conpty', 'conpty.dll'), '')

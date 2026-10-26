@@ -12,7 +12,7 @@ const {
   verifyPackagedNodePtyJobOwnership,
   verifyPackagedWindowsNodePty
 } = require('./verify-packaged-node-pty-job-ownership.cjs')
-const { CYGWIN_BREAKAWAY_MARKER } = require('./node-pty-job-ownership.cjs')
+const { CYGWIN_BREAKAWAY_MARKER, NATIVE_HOST_JOB_MARKER } = require('./node-pty-job-ownership.cjs')
 
 const fixtureDir = mkdtempSync(join(tmpdir(), 'packaged-node-pty-job-'))
 const ELECTRON_BUILDER_CONFIG = readFileSync(
@@ -21,10 +21,15 @@ const ELECTRON_BUILDER_CONFIG = readFileSync(
 )
 
 /** A real enough addon: a machine field the arch check reads, and the marker. */
-function conptyImage({ arch = 'x64', cygwinBreakawayDenied = true } = {}) {
+function conptyImage({
+  arch = 'x64',
+  cygwinBreakawayDenied = true,
+  nativeHostJobOwned = true
+} = {}) {
   return Buffer.concat([
     peImage({ arch }),
-    cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0)
+    cygwinBreakawayDenied ? CYGWIN_BREAKAWAY_MARKER : Buffer.alloc(0),
+    nativeHostJobOwned ? NATIVE_HOST_JOB_MARKER : Buffer.alloc(0)
   ])
 }
 
@@ -54,13 +59,23 @@ const PATCHED = {
   module: {
     listJobProcessIds: () => [],
     terminateJob: () => true,
-    assignCurrentProcessToJob: () => true
+    assignCurrentProcessToJob: () => true,
+    assignCurrentProcessToStrictJob: () => true
   }
 }
 
 const packaged = (native, addonPath = CURRENT_ADDON) => ({
   platform: 'win32',
   loadNative: () => ({ native, addonPath })
+})
+
+it('rejects a cross-host package whose addon predates strict native-host ownership', () => {
+  const resourcesDir = packagedResources({
+    'build/Release/conpty.node': { nativeHostJobOwned: false }
+  })
+  expect(() =>
+    verifyPackagedWindowsNodePty(resourcesDir, 'x64', { hostPlatform: 'darwin' })
+  ).toThrow(/lacks strict native-host process ownership/)
 })
 
 describe('verifyPackagedNodePtyJobOwnership', () => {
