@@ -64,6 +64,7 @@ function corpus(scale: number, dense = false) {
   const work = emptyWork()
   const fixture = nativeChatFanoutFixture(mounted, workspaces, 1)
   const { tabsByWorktree, unifiedTabsByWorktree } = fixture
+  const chatIds = Object.values(unifiedTabsByWorktree).flatMap((rows) => rows.map((row) => row.id))
   for (const row of Object.values(tabsByWorktree).flat()) {
     countRow(row, () => work.terminalRows++)
   }
@@ -124,6 +125,7 @@ function corpus(scale: number, dense = false) {
 
   return {
     mounted,
+    chatIds,
     workspaces,
     work,
     reset: () => Object.assign(work, emptyWork()),
@@ -204,19 +206,17 @@ afterEach(() => {
 
 function measureImageSubscriptions(scale: number) {
   const data = corpus(scale)
-  const contexts = new Map<number, NativeChatImageRuntimeContext>()
+  const contexts = new Map<string, NativeChatImageRuntimeContext>()
   let renders = 0
-  function Probe({ index }: { index: number }) {
-    contexts.set(index, useNativeChatImageRuntimeContext(`chat-${index}`))
+  function Probe({ chatId }: { chatId: string }) {
+    contexts.set(chatId, useNativeChatImageRuntimeContext(chatId))
     renders += 1
     return null
   }
-  const view = render(
-    Array.from({ length: data.mounted }, (_, index) => <Probe key={index} index={index} />)
-  )
+  const view = render(data.chatIds.map((chatId) => <Probe key={chatId} chatId={chatId} />))
   expect(contexts.size).toBe(data.mounted)
   for (let index = 0; index < data.mounted; index += 1) {
-    expect(contexts.get(index)?.worktreePath).toBe(`/repo/${index}`)
+    expect(contexts.get(`chat-${index}`)?.worktreePath).toBe(`/repo/${index}`)
   }
   const baseline = renders
   const rounds: Work[] = []
@@ -233,7 +233,7 @@ function measureImageSubscriptions(scale: number) {
   expect(renders - baseline).toBe(0)
 
   const destination = data.moveLastChat()
-  expect(contexts.get(data.mounted - 1)).toMatchObject({
+  expect(contexts.get(`chat-${data.mounted - 1}`)).toMatchObject({
     worktreeId: destination,
     worktreePath: `/repo/${data.workspaces - 2}`,
     target: { kind: 'local' }
@@ -256,16 +256,17 @@ describe('native chat store subscription performance', () => {
       const pending = Promise.withResolvers<never>()
       rpc.mockReturnValueOnce(pending.promise)
       const data = corpus(scale)
-      const snapshots = new Map<number, NativeChatSkillDiscovery>()
+      const lastChatId = `chat-${data.mounted - 1}`
+      const snapshots = new Map<string, NativeChatSkillDiscovery>()
       let renders = 0
-      function Probe({ index, enabled }: { index: number; enabled: boolean }) {
-        snapshots.set(index, useNativeChatSkills('codex', `chat-${index}`, enabled))
+      function Probe({ chatId, enabled }: { chatId: string; enabled: boolean }) {
+        snapshots.set(chatId, useNativeChatSkills('codex', chatId, enabled))
         renders += 1
         return null
       }
       const probes = (enabled: boolean) =>
-        Array.from({ length: data.mounted }, (_, index) => (
-          <Probe key={index} index={index} enabled={enabled && index === data.mounted - 1} />
+        data.chatIds.map((chatId) => (
+          <Probe key={chatId} chatId={chatId} enabled={enabled && chatId === lastChatId} />
         ))
       const view = render(probes(false))
       const baseline = renders
@@ -277,7 +278,7 @@ describe('native chat store subscription performance', () => {
       expect(rpc).not.toHaveBeenCalled()
 
       view.rerender(probes(true))
-      expect(snapshots.get(data.mounted - 1)?.status).toBe('loading')
+      expect(snapshots.get(lastChatId)?.status).toBe('loading')
       expect(rpc).toHaveBeenCalledExactlyOnceWith(
         { kind: 'local' },
         'skills.discover',
@@ -299,9 +300,9 @@ describe('native chat store subscription performance', () => {
           )
         })
       )
-      expect(snapshots.get(data.mounted - 1)?.status).toBe('idle')
+      expect(snapshots.get(lastChatId)?.status).toBe('idle')
       view.rerender(probes(true))
-      await waitFor(() => expect(snapshots.get(data.mounted - 1)?.status).toBe('ready'))
+      await waitFor(() => expect(snapshots.get(lastChatId)?.status).toBe('ready'))
       expect(rpc).toHaveBeenLastCalledWith(
         { kind: 'environment', environmentId: 'latest' },
         'skills.discover',
@@ -309,7 +310,7 @@ describe('native chat store subscription performance', () => {
         { timeoutMs: 10_000 }
       )
       await act(async () => pending.reject(new Error('Old owner request failed')))
-      expect(snapshots.get(data.mounted - 1)?.status).toBe('ready')
+      expect(snapshots.get(lastChatId)?.status).toBe('ready')
       view.unmount()
       rpc.mockClear()
       resetNativeChatSkillDiscoveryCacheForTests()
@@ -345,16 +346,14 @@ describe('native chat store subscription performance', () => {
     for (const scale of [1, 10]) {
       const data = corpus(scale, true)
       let renders = 0
-      function Probe({ index }: { index: number }) {
-        const context = useNativeChatImageRuntimeContext(`chat-${index}`)
+      function Probe({ chatId }: { chatId: string }) {
+        const context = useNativeChatImageRuntimeContext(chatId)
         expect(context?.worktreePath).toBe('/repo/0')
         renders += 1
         return null
       }
       data.reset()
-      const view = render(
-        Array.from({ length: data.mounted }, (_, index) => <Probe key={index} index={index} />)
-      )
+      const view = render(data.chatIds.map((chatId) => <Probe key={chatId} chatId={chatId} />))
       const mount = { ...data.work }
       // All canonical rows may be indexed once. Private per-hook maps would cost N + N².
       expect(mount.terminalRows).toBeLessThanOrEqual(1)
