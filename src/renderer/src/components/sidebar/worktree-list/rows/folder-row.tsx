@@ -18,6 +18,7 @@ import { getVirtualRowTransform } from '../viewport/virtual-rows'
 import { getFolderWorkspaceRowGeometry } from './indentation'
 import { getFolderWorkspaceCardPrDisplay } from '../../folder-workspace-card-pr-display'
 import { FolderPathStatusIndicator } from './FolderPathStatusIndicator'
+import MultiRepoRowBadge from '@/components/multi-repo/MultiRepoRowBadge'
 import type { FolderWorkspaceItemRow } from '../listing/renderable-rows'
 import { forwardOptionPressToCardSurface, getWorktreeOptionId } from './option-dom'
 
@@ -130,7 +131,8 @@ export function renderFolderWorkspaceVirtualRow(args: {
           onContextMenuSelect={ctx.onContextMenuSelect}
           statusPrDisplay={folderPrDisplay}
         />
-        <div className="pointer-events-auto absolute right-3 top-1.5">
+        <div className="pointer-events-auto absolute right-3 top-1.5 flex items-center gap-1.5">
+          <MultiRepoRowBadge folderWorkspace={row.folderWorkspace} />
           <FolderPathStatusIndicator status={pathStatus} />
         </div>
       </div>
