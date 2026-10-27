@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { MultiRepoMember } from '../../../../../shared/multi-repo-workspace'
 import type { Repo } from '../../../../../shared/repo-types'
 import type { Worktree } from '../../../../../shared/worktree/types'
+import type { FolderWorkspace } from '../../../../../shared/folder-workspace-types'
 import {
+  collectMultiRepoMemberWorktreeIds,
   deriveMultiRepoMemberViews,
   summarizeMultiRepoWorkspace
 } from './multi-repo-workspace-selectors'
@@ -93,5 +95,20 @@ describe('parseMultiRepoWorkspaceError', () => {
 
   it('ignores unrelated errors', () => {
     expect(parseMultiRepoWorkspaceError(new Error('boom'))).toBeNull()
+  })
+})
+
+describe('collectMultiRepoMemberWorktreeIds', () => {
+  it('collects only members that hold a worktree, across workspaces', () => {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the collector reads only multiRepo.members.
+    const workspaces = [
+      workspace([
+        member({ memberId: 'a' }),
+        member({ memberId: 'b', state: 'failed', worktreeId: undefined })
+      ]),
+      { multiRepo: undefined },
+      workspace([member({ memberId: 'c' })])
+    ] as unknown as FolderWorkspace[]
+    expect([...collectMultiRepoMemberWorktreeIds(workspaces)]).toEqual(['a::wt', 'c::wt'])
   })
 })

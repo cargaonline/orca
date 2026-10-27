@@ -131,6 +131,21 @@ export function findMultiRepoMemberByWorktreeId(
   return null
 }
 
+/** Worktree ids that belong to a multi-repo workspace, for rows that must not be dragged or reparented. */
+export function collectMultiRepoMemberWorktreeIds(
+  workspaces: readonly FolderWorkspace[]
+): ReadonlySet<string> {
+  const ids = new Set<string>()
+  for (const workspace of workspaces) {
+    for (const member of workspace.multiRepo?.members ?? []) {
+      if (member.worktreeId) {
+        ids.add(member.worktreeId)
+      }
+    }
+  }
+  return ids
+}
+
 /** Derived lock: a worktree is locked iff a multi-repo member points at it. */
 export function isMultiRepoLockedWorktree(
   workspaces: readonly FolderWorkspace[],
