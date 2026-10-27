@@ -39,8 +39,8 @@ export function getDeleteButtonLabel(
   }
   return translate(
     'auto.components.multiRepo.delete.confirm',
-    'Delete workspace and {{n}} worktrees',
-    { n: repoCount }
+    'Delete workspace and {{count}} worktrees',
+    { count: repoCount }
   )
 }
 
