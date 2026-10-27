@@ -19006,6 +19006,32 @@
           "clean": "Clean",
           "changed": "{{n}} changed",
           "notCreated": "{{names}} not created yet. The workspace folder holds only the ready repos."
+        },
+        "delete": {
+          "checking": "Checking…",
+          "close": "Close",
+          "cancel": "Cancel",
+          "title": "Delete {{name}}?",
+          "body": "This removes {{n}} worktrees and the workspace folder if it is empty. Branches that are fully merged are deleted; branches with unmerged commits are kept.",
+          "retryFailed": "Retry {{n}} failed",
+          "discardOne": "Delete and discard changes in 1 repo",
+          "discardMany": "Delete and discard changes in {{n}} repos",
+          "confirm": "Delete workspace and {{n}} worktrees",
+          "removing": "Removing…",
+          "removedKept": "Removed. Branch {{branch}} kept",
+          "removed": "Removed",
+          "failed": "Failed",
+          "gone": "Worktree already gone. Only the record is removed",
+          "dirtyUnknown": "Could not check changes",
+          "dirty": "{{n}} uncommitted files",
+          "unpublishedUnknown": "Could not check commits",
+          "unpublished": "{{n}} unpublished commits on {{branch}}",
+          "branchKept": "Branch will be kept: unmerged commits",
+          "branchUnknown": "Could not check the branch",
+          "force": "Discard changes in {{repo}}",
+          "folderKeptNotEmpty": "Folder kept: it contains files ({{path}})",
+          "folderKeptNotOwned": "Folder kept: Orca did not create it ({{path}})",
+          "folderKeptFailed": "Folder kept: it could not be removed ({{path}})"
         }
       }
     },
