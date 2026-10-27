@@ -7,7 +7,7 @@ import { translate } from '@/i18n/i18n'
 import { selectWorktreesByRepo } from '@/store/workspace-record-selectors'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import { buildRootPanelModel, type RootPanelRow } from './root-panel-model'
-import { getRootPanelStatusText } from './root-panel-copy'
+import { getRootPanelStatusDetail, getRootPanelStatusText } from './root-panel-copy'
 
 const ATTENTION_KINDS = new Set(['queued', 'creating', 'failed', 'interrupted'])
 
@@ -74,7 +74,10 @@ export default function MultiRepoAttentionRows({
         <li key={row.memberId} className="flex min-w-0 items-center gap-1.5 text-xs">
           <AttentionIcon row={row} />
           <span className="min-w-0 truncate text-foreground">{row.label}</span>
-          <span className="min-w-0 truncate text-muted-foreground">
+          <span
+            className="min-w-0 truncate text-muted-foreground"
+            title={getRootPanelStatusDetail(row.status)}
+          >
             {getRootPanelStatusText(row.status)}
           </span>
           {row.canRetry ? (

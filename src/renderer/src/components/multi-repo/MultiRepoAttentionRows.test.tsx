@@ -80,7 +80,7 @@ describe('MultiRepoAttentionRows', () => {
         ])}
       />
     )
-    expect(screen.getByText('fetch failed')).toBeTruthy()
+    expect(screen.getByText('Git could not create it').getAttribute('title')).toBe('fetch failed')
     expect(screen.getByText('Creating…')).toBeTruthy()
     expect(screen.getAllByRole('button')).toHaveLength(1)
     await act(async () => {

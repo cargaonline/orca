@@ -13,6 +13,7 @@ import { buildRootPanelModel, type RootPanelRow, type RootPanelRowStatus } from 
 import {
   getNotCreatedNote,
   getRootPanelHeaderText,
+  getRootPanelStatusDetail,
   getRootPanelStatusText
 } from './root-panel-copy'
 
@@ -171,6 +172,7 @@ function RootPanelRowItem({
   onRemove: () => void
 }): React.JSX.Element {
   const statusText = getRootPanelStatusText(row.status)
+  const statusDetail = getRootPanelStatusDetail(row.status)
   const content = (
     <>
       <StatusIcon status={row.status} />
@@ -179,7 +181,12 @@ function RootPanelRowItem({
         {row.branchName}
       </span>
       {statusText ? (
-        <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground">{statusText}</span>
+        <span
+          className="ml-auto min-w-0 truncate text-xs text-muted-foreground"
+          title={statusDetail}
+        >
+          {statusText}
+        </span>
       ) : null}
     </>
   )

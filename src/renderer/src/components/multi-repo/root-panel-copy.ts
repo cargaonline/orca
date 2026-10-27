@@ -60,7 +60,7 @@ export function getRootPanelStatusText(status: RootPanelRowStatus): string {
     case 'project_removed':
       return translate('auto.components.multiRepo.root.projectRemoved', 'Project removed')
     case 'failed':
-      return status.reason || translate('auto.components.multiRepo.root.failedRow', 'Failed')
+      return getFailureSummary(status.code)
     case 'ready':
       // Unknown counts say nothing: "Clean" is claimed only when the status is known and empty.
       if (status.changedCount === null) {
@@ -80,4 +80,44 @@ export function getNotCreatedNote(labels: readonly string[]): string {
     '{{names}} not created yet. The workspace folder holds only the ready repos.',
     { names: labels.join(', ') }
   )
+}
+
+function getFailureSummary(code: Extract<RootPanelRowStatus, { kind: 'failed' }>['code']): string {
+  switch (code) {
+    case 'path_occupied':
+      return translate('auto.components.multiRepo.root.failedPathOccupied', 'Folder already in use')
+    case 'branch_conflict':
+      return translate(
+        'auto.components.multiRepo.root.failedBranchConflict',
+        'Branch already in use'
+      )
+    case 'git_failed':
+      return translate('auto.components.multiRepo.root.failedGit', 'Git could not create it')
+    case 'setup_failed':
+      return translate('auto.components.multiRepo.root.failedSetup', 'Setup failed')
+    case 'repo_unavailable':
+      return translate(
+        'auto.components.multiRepo.root.failedRepoUnavailable',
+        'Project unavailable'
+      )
+    case 'host_unavailable':
+      return translate('auto.components.multiRepo.root.failedHostUnavailable', 'Host unavailable')
+    case 'unknown':
+      return translate('auto.components.multiRepo.root.failedRow', 'Failed')
+  }
+}
+
+const ABSOLUTE_PATH = /(?:[A-Za-z]:)?(?:[\\/][^\s'"`:]+){2,}/g
+const FAILURE_DETAIL_MAX_LENGTH = 400
+
+/** Tooltip text for a failed row: the cause with absolute paths cut down to their last segment. */
+export function getRootPanelStatusDetail(status: RootPanelRowStatus): string | undefined {
+  if (status.kind !== 'failed') {
+    return undefined
+  }
+  const detail = status.detail
+    .replace(ABSOLUTE_PATH, (path) => `…/${path.split(/[\\/]/).findLast(Boolean) ?? ''}`)
+    .trim()
+    .slice(0, FAILURE_DETAIL_MAX_LENGTH)
+  return detail || undefined
 }

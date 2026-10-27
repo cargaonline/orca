@@ -1,4 +1,5 @@
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
+import type { MultiRepoMemberFailureCode } from '../../../../shared/multi-repo-workspace'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
@@ -16,7 +17,7 @@ export type RootPanelRowStatus =
   | { kind: 'queued' }
   | { kind: 'creating' }
   | { kind: 'ready'; changedCount: number | null }
-  | { kind: 'failed'; reason: string }
+  | { kind: 'failed'; code: MultiRepoMemberFailureCode; detail: string }
   | { kind: 'interrupted' }
   | { kind: 'missing' }
   | { kind: 'project_removed' }
@@ -118,7 +119,11 @@ export function buildRootPanelModel({
       case 'failed':
         return {
           ...base,
-          status: { kind: 'failed', reason: member.failure?.message ?? '' },
+          status: {
+            kind: 'failed',
+            code: member.failure?.code ?? 'unknown',
+            detail: member.failure?.message ?? ''
+          },
           openKey: null,
           canRetry: true,
           canRemove: member.attempts >= REMOVE_AFTER_FAILED_ATTEMPTS

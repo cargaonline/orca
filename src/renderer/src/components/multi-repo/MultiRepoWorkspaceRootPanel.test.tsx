@@ -77,7 +77,7 @@ describe('MultiRepoWorkspaceRootPanel', () => {
     ])
     useAppStore.setState({ folderWorkspaces: [ws] })
     render(<MultiRepoWorkspaceRootPanel folderWorkspace={ws} />)
-    expect(screen.getByText('fetch failed')).toBeTruthy()
+    expect(screen.getByText('Git could not create it').getAttribute('title')).toBe('fetch failed')
     expect(
       screen.getByText('api not created yet. The workspace folder holds only the ready repos.')
     ).toBeTruthy()

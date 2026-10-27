@@ -4,7 +4,11 @@ import type { MultiRepoMember } from '../../../../shared/multi-repo-workspace'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { buildRootPanelModel, REMOVE_AFTER_FAILED_ATTEMPTS } from './root-panel-model'
-import { getRootPanelHeaderText, getRootPanelStatusText } from './root-panel-copy'
+import {
+  getRootPanelHeaderText,
+  getRootPanelStatusDetail,
+  getRootPanelStatusText
+} from './root-panel-copy'
 
 function member(id: string, patch: Partial<MultiRepoMember> = {}): MultiRepoMember {
   return {
@@ -103,7 +107,7 @@ describe('buildRootPanelModel', () => {
     ])
     expect(model?.retryAllCount).toBe(3)
     expect(model?.notCreatedLabels).toEqual(['api', 'web', 'infra'])
-    expect(getRootPanelStatusText(model!.rows[0].status)).toBe('fetch failed')
+    expect(getRootPanelStatusText(model!.rows[0].status)).toBe('Git could not create it')
     expect(getRootPanelHeaderText(model!.summary)).toBe('3 repos · 2 failed · 1 interrupted')
   })
 
@@ -133,5 +137,24 @@ describe('buildRootPanelModel', () => {
       ['missing', true, null],
       ['project_removed', true, null]
     ])
+  })
+})
+
+describe('getRootPanelStatusDetail', () => {
+  it('keeps the cause for the tooltip without absolute paths', () => {
+    const status = {
+      kind: 'failed' as const,
+      code: 'git_failed' as const,
+      detail:
+        "Command failed: git worktree add /Users/me/work/ws/api\nfatal: '/Users/me/work/ws/api' exists"
+    }
+    expect(getRootPanelStatusText(status)).toBe('Git could not create it')
+    const detail = getRootPanelStatusDetail(status)
+    expect(detail).toContain('fatal:')
+    expect(detail).not.toContain('/Users/me')
+  })
+
+  it('has no tooltip for rows that did not fail', () => {
+    expect(getRootPanelStatusDetail({ kind: 'creating' })).toBeUndefined()
   })
 })
