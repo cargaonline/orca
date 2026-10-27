@@ -1493,6 +1493,9 @@
           "setupProjectOnHost": "Set up on another host",
           "setupProjectOnHostHelp": "Choose a host, then import an existing checkout, clone the repository there, or track a setup that will be provisioned later."
         },
+        "RepositorySourceControlAiActionRows": {
+          "7a3a8e431d": "CLI arguments"
+        },
         "RepositorySourceControlAiEnablement": {
           "30ae6dcce8": "Global default is",
           "84233d1bb3": "Off",
@@ -1626,8 +1629,8 @@
           "fac59213fc": "Search builtin themes"
         },
         "SourceControlAiActionRecipeDefaults": {
-          "a9359c8aa9": "Unknown error",
-          "2cb4bb7e5d": "CLI arguments"
+          "2cb4bb7e5d": "CLI arguments",
+          "a9359c8aa9": "Unknown error"
         },
         "SparsePresetSettingsSection": {
           "2d7d45e991": "Cancel",
@@ -2075,9 +2078,6 @@
         },
         "wslHosts": {
           "remove": "Remove"
-        },
-        "RepositorySourceControlAiActionRows": {
-          "7a3a8e431d": "CLI arguments"
         }
       },
       "shared": {
@@ -3157,7 +3157,6 @@
         "workflow": "Background workflow"
       },
       "composer": {
-        "effort": "Effort",
         "imageUnsupported": "Image paste is not supported for this agent.",
         "placeholder": "Ask anything, @ to mention files, / for commands"
       },
@@ -3282,27 +3281,27 @@
         "continuedOutsideRewound": "Continued outside this chat. Earlier replies above are no longer in this conversation's history.",
         "historyItemTooLarge": "This part of the chat was too large to show.",
         "historyRepaired": "Part of this chat's history couldn't be loaded.",
-        "plan": "Plan",
-        "stoppedBeforeStart": "Stopped manually",
         "orcaStopCanContinue": "You can continue in this conversation.",
         "orcaStopCrash": "Orca on {{machine}} stopped unexpectedly while this response was in progress.",
         "orcaStopQuit": "Orca on {{machine}} was closed while this response was in progress.",
         "orcaStopRemote": "Orca on {{machine}} stopped while this response was in progress.",
         "orcaStopUnnamedServer": "the remote server",
-        "orcaStopUpdate": "Orca on {{machine}} restarted for an update while this response was in progress."
+        "orcaStopUpdate": "Orca on {{machine}} restarted for an update while this response was in progress.",
+        "plan": "Plan",
+        "stoppedBeforeStart": "Stopped manually"
       },
       "question": {
         "other": "Other…"
       },
       "queuedMessages": {
-        "imageCount_one": "{{count}} image",
-        "imageCount_other": "{{count}} images",
         "editChanged": "This message changed while you were editing. Your edit is in the chat box.",
         "editChangedNotSaved": "This message changed while you were editing. Your edit wasn't saved.",
         "editChangedPrompt": "This message changed while you were editing. Your edit will be in the chat box after you answer the agent.",
         "editFailed": "This message can't be edited.",
         "editGone": "This message was already sent or removed. Your edit is in the chat box.",
-        "editGonePrompt": "This message was already sent or removed. Your edit will be in the chat box after you answer the agent."
+        "editGonePrompt": "This message was already sent or removed. Your edit will be in the chat box after you answer the agent.",
+        "imageCount_one": "{{count}} image",
+        "imageCount_other": "{{count}} images"
       },
       "receipt": {
         "cancelled": "Cancelled",
@@ -3368,6 +3367,7 @@
         "countOne": "1 tool call",
         "failedCallsLabel": "Failed tool calls: {{value0}}",
         "failedCount": "{{value0}} failed",
+        "fullOutputPartial": "Showing {{shown}} of {{total}}.",
         "interruptedCallsLabel": "Interrupted tool calls: {{value0}}",
         "interruptedCount": "{{value0}} interrupted",
         "moreCalls": "+{{value0}} more",
@@ -3375,15 +3375,14 @@
         "ranCommandOneToolSummary": "Ran {{commandCount}} command and used {{toolCount}} tool",
         "ranCommandsManyToolsSummary": "Ran {{commandCount}} commands and used {{toolCount}} tools",
         "ranCommandsOneToolSummary": "Ran {{commandCount}} commands and used {{toolCount}} tool",
+        "result": "Result",
         "running": "Running…",
         "runningCommand": "Running command",
         "runningNamed": "Running {{toolName}}",
         "runningNamedPreview": "Running {{toolName}} {{preview}}",
         "runningPreview": "Running {{preview}}",
         "usedManySummary": "Used {{toolCount}} tools",
-        "usedOneSummary": "Used 1 tool",
-        "fullOutputPartial": "Showing {{shown}} of {{total}}.",
-        "result": "Result"
+        "usedOneSummary": "Used 1 tool"
       },
       "writeNotice": {
         "agentRefused": "The agent turned this down.",
@@ -3430,6 +3429,7 @@
         "optionRejected": "The agent didn't accept this setting.",
         "outcomeUnknown": "Orca couldn't confirm what happened. Check the chat.",
         "ownerUnproven": "The previous agent in this chat may still be running.",
+        "pendingWork": "Wait for pending work and messages to finish before using this command.",
         "promptPending": "The agent is waiting for an answer to a question or approval.",
         "questionChanged": "This question was already answered or has changed.",
         "queueTooLarge": "Too much text is waiting in the queue.",
@@ -3459,8 +3459,7 @@
         "waitForCommand": "Wait for the /compact or /clear to finish.",
         "waitForStart": "Wait for the agent to finish starting.",
         "waitForTurn": "Wait for the agent to finish responding, or stop it.",
-        "waitMoment": "Wait a moment.",
-        "pendingWork": "Wait for pending work and messages to finish before using this command."
+        "waitMoment": "Wait a moment."
       }
     },
     "onboarding": {
@@ -3602,9 +3601,6 @@
     "sourceControl": {
       "actionModel": {
         "permissionsDefaultHint": "Terminals use Agent Permissions unless this action sets its own CLI arguments."
-      },
-      "actionPermissions": {
-        "sameAsAgent": "Same as {{agent}}"
       }
     }
   },

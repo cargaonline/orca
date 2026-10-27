@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
+import { useProjectHostSetupProjection } from '@/store/selectors'
 import { activateAndRevealWorkspace } from '@/lib/worktree-activation'
 import { ipcOrRuntimeTargetForHostId } from '@/runtime/runtime-client-target'
 import { translate } from '@/i18n/i18n'
@@ -53,8 +54,7 @@ export function useMultiRepoComposer({
   onProjectHostSetupChange,
   onCreated
 }: UseMultiRepoComposerInput) {
-  const setups = useAppStore((state) => state.projectHostSetups)
-  const projects = useAppStore((state) => state.projects)
+  const { projects, setups } = useProjectHostSetupProjection()
   const createMultiRepoWorkspace = useAppStore((state) => state.createMultiRepoWorkspace)
   const [extraProjectIds, setExtraProjectIds] = useState<string[]>([])
   const [setupOverrides, setSetupOverrides] = useState<Record<string, string | undefined>>({})

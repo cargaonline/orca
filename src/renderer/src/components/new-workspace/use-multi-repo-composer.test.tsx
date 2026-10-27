@@ -67,7 +67,9 @@ beforeEach(() => {
   create.mockReset()
   mocks.activate.mockReset()
   useAppStore.setState({
-    projectHostSetups: [
+    repos: [],
+    endpointProjects: [],
+    endpointProjectHostSetups: [
       setup('api'),
       setup('web'),
       setup('infra', { hostId: 'runtime:a' }),
