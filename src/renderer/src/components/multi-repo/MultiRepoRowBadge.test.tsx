@@ -46,11 +46,13 @@ beforeEach(() => {
   useAppStore.setState({
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the badge reads only repo ids and names.
     repos: ['a', 'b', 'c'].map((id) => ({ id: `repo-${id}`, displayName: id }) as Repo),
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal worktree fixtures; the badge reads only id.
     worktreesByRepo: {
       'repo-a': [{ id: 'wt-a' }],
       'repo-b': [{ id: 'wt-b' }],
       'repo-c': [{ id: 'wt-c' }]
     } as never,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the status map is only counted, never read by entry shape.
     gitStatusByWorktree: { 'wt-a': [{}, {}], 'wt-b': [{}] } as never
   })
 })

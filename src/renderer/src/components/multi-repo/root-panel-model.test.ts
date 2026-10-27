@@ -40,11 +40,13 @@ function workspace(members: MultiRepoMember[], multiRepo = true): FolderWorkspac
   }
 }
 
+// oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal repo fixtures; the model reads only id and displayName.
 const repos = ['a', 'b', 'c'].map((id) => ({
   id: `repo-${id}`,
   displayName: id === 'a' ? 'api' : id === 'b' ? 'web' : 'infra'
 })) as unknown as Repo[]
 const worktrees = Object.fromEntries(
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal worktree fixtures; the model reads only id.
   ['a', 'b', 'c'].map((id) => [`repo-${id}`, [{ id: `wt-${id}` }] as unknown as Worktree[]])
 )
 

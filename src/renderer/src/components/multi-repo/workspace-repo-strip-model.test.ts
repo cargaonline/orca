@@ -37,6 +37,7 @@ function workspace(members: MultiRepoMember[], multiRepo = true): FolderWorkspac
   }
 }
 
+// oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal repo fixtures; the model reads only id and displayName.
 const repos = [
   { id: 'repo-a', displayName: 'api' },
   { id: 'repo-b', displayName: 'web' }
@@ -45,6 +46,7 @@ const input = (activeWorktreeId: string | null, folderWorkspaces: FolderWorkspac
   activeWorktreeId,
   folderWorkspaces,
   repos,
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the status map is only counted, never read by entry shape.
   gitStatusByWorktree: { 'wt-a': [{}, {}, {}] } as never
 })
 

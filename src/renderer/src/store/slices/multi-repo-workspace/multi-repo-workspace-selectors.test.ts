@@ -31,6 +31,7 @@ const workspace = (members: MultiRepoMember[]) => ({
 
 describe('deriveMultiRepoMemberViews', () => {
   it('marks removed projects and vanished worktrees without flagging unloaded lists', () => {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal repo fixtures; the selector reads only id.
     const repos = [{ id: 'api' }, { id: 'web' }, { id: 'infra' }] as Repo[]
     const views = deriveMultiRepoMemberViews(
       workspace([
@@ -40,6 +41,7 @@ describe('deriveMultiRepoMemberViews', () => {
         member({ memberId: 'gone' })
       ]),
       repos,
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal worktree fixture; the selector reads only id.
       { api: [{ id: 'api::wt' } as Worktree], web: [] }
     )
     expect(views.map((view) => view.availability)).toEqual([
@@ -63,6 +65,7 @@ describe('summarizeMultiRepoWorkspace', () => {
         member({ memberId: 'web', state: 'failed', worktreeId: undefined }),
         member({ memberId: 'infra', state: 'creating', worktreeId: undefined })
       ]),
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: minimal repo fixtures; the selector reads only id.
       [{ id: 'api' }, { id: 'web' }, { id: 'infra' }] as Repo[],
       {}
     )

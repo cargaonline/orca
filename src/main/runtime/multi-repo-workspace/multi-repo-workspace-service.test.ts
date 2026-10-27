@@ -45,10 +45,12 @@ function createHarness(repoIds: string[]) {
   }
   const failingRepos = new Set<string>()
   const port = {
-    // SAFETY: the fake implements only the store members the service touches.
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake implements only the store members the service touches.
     requireStore: () => store as unknown as RuntimeStore,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the port fake needs only the id the service reads.
     createProjectGroup: vi.fn(async () => ({ id: 'group' }) as never),
     createFolderWorkspace: vi.fn(async (input: { name: string; folderPath: string }) => {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake workspace carries only the fields the service reads.
       const workspace = {
         id: `ws-${workspaces.length + 1}`,
         name: input.name,
@@ -60,7 +62,7 @@ function createHarness(repoIds: string[]) {
     deleteFolderWorkspace: vi.fn(async (id: string) => {
       const index = workspaces.findIndex((entry) => entry.id === id)
       workspaces.splice(index, 1)
-      return { deleted: index >= 0 }
+      return { deleted: index !== -1 }
     }),
     createWorktree: vi.fn(
       async (args: {
@@ -72,9 +74,10 @@ function createHarness(repoIds: string[]) {
         }
         const path = join(args.placement!.parentDir, args.placement!.leafName)
         await mkdir(path)
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake result carries only the worktree fields the service reads.
         return {
           worktree: {
-            id: `${args.repoSelector}::${path}`,
+            id: `${String(args.repoSelector)}::${path}`,
             instanceId: 'i',
             branch: 'refs/heads/feature'
           }
@@ -85,6 +88,7 @@ function createHarness(repoIds: string[]) {
       pruneMultiRepoMemberForWorktree(store, worktreeId)
       return {}
     }),
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake lists no worktrees; only the array shape is read.
     listDetectedWorktrees: vi.fn(async () => ({ worktrees: [] }) as never),
     notifyChanged: vi.fn()
   } satisfies MultiRepoWorkspacePort
@@ -137,6 +141,7 @@ describe('multi-repo create and retry', () => {
     const failed = settled.multiRepo!.members[1]
     const path = join(settled.folderPath, failed.dirName)
     await mkdir(path)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the adopted-worktree fake carries only the fields tryAdopt reads.
     port.listDetectedWorktrees.mockResolvedValue({
       worktrees: [
         { id: `b::${path}`, repoId: 'b', path, branch: 'refs/heads/adopt', instanceId: 'x' }
@@ -282,7 +287,7 @@ describe('multi-repo lock and mobile force', () => {
       (entry) => entry.name === 'multiRepoWorkspace.delete'
     )!
     await expect(
-      // SAFETY: only pairedDeviceId and the params are read before the refusal.
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: only pairedDeviceId and the params are read before the refusal.
       method.handler({ folderWorkspaceId: 'ws', forceMemberIds: ['m'] }, {
         pairedDeviceId: 'phone'
       } as never)

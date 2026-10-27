@@ -44,7 +44,7 @@ export async function allocateMultiRepoRoot(
 export function allocateMemberDirNames(repoPaths: readonly string[]): string[] {
   const taken = new Set<string>()
   return repoPaths.map((repoPath) => {
-    const leaf = repoPath.split(/[\\/]/).filter(Boolean).at(-1) ?? 'project'
+    const leaf = repoPath.split(/[\\/]/).findLast(Boolean) ?? 'project'
     const base = sanitizeWorktreeName(leaf.replace(/\.git$/, ''))
     let candidate = base
     for (let suffix = 2; taken.has(candidate.toLowerCase()); suffix += 1) {
