@@ -4,11 +4,16 @@ import { recordCreateInLastSet, type LastMultiRepoSet } from './multi-repo-compo
 const STORAGE_KEY = 'orca.new-workspace.last-multi-repo-set.v1'
 
 function toLastMultiRepoSet(value: unknown): LastMultiRepoSet | null {
-  if (typeof value !== 'object' || value === null) {
+  // `in` narrows the parsed JSON to typed fields, so no dynamic property reads are needed.
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('projectIds' in value) ||
+    !('singleCreatesSince' in value)
+  ) {
     return null
   }
-  const projectIds: unknown = Reflect.get(value, 'projectIds')
-  const singleCreatesSince: unknown = Reflect.get(value, 'singleCreatesSince')
+  const { projectIds, singleCreatesSince } = value
   if (
     !Array.isArray(projectIds) ||
     projectIds.length === 0 ||
