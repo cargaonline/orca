@@ -19005,7 +19005,8 @@
           "failedRow": "Failed",
           "clean": "Clean",
           "changed": "{{n}} changed",
-          "notCreated": "{{names}} not created yet. The workspace folder holds only the ready repos."
+          "notCreated": "{{names}} not created yet. The workspace folder holds only the ready repos.",
+          "deleteWorkspace": "Delete workspace"
         },
         "delete": {
           "checking": "Checking…",

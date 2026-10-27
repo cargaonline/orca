@@ -6,6 +6,7 @@ import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import { activateWorkspaceRepoEntry } from '@/lib/multi-repo-workspace-repo-navigation'
 import { selectWorktreesByRepo } from '@/store/workspace-record-selectors'
+import { deleteFolderWorkspaceUnlessUnsaved } from '@/components/sidebar/folder-workspace-delete'
 import type { MultiRepoMemberAction } from '@/store/slices/multi-repo-workspace/multi-repo-workspace-contract'
 import type { FolderWorkspace } from '../../../../shared/folder-workspace-types'
 import { buildRootPanelModel, type RootPanelRow, type RootPanelRowStatus } from './root-panel-model'
@@ -105,6 +106,21 @@ export default function MultiRepoWorkspaceRootPanel({
           <div className="text-sm font-medium text-foreground">
             {translate('auto.components.multiRepo.root.emptyTitle', 'No repos in this workspace')}
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            className="mt-3"
+            onClick={() =>
+              void deleteFolderWorkspaceUnlessUnsaved(
+                useAppStore.getState,
+                folderWorkspace.id,
+                executionHostId
+              )
+            }
+          >
+            {translate('auto.components.multiRepo.root.deleteWorkspace', 'Delete workspace')}
+          </Button>
         </div>
       ) : (
         <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto py-2">
