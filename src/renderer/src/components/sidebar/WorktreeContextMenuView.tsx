@@ -36,6 +36,7 @@ import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 import { WorktreeStatusMenuItems } from './WorktreeStatusMenuItems'
 import { WorktreeContextMenuOverlays } from './WorktreeContextMenuOverlays'
+import { RemoveFromWorkspaceMenuItem } from '@/components/multi-repo/MultiRepoMemberNotices'
 import {
   WORKTREE_CONTEXT_MENU_SCOPE_ATTR,
   getWorktreeParentPickerLabel,
@@ -285,6 +286,9 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
               )}
             </>
           )}
+          {!isMultiContext ? (
+            <RemoveFromWorkspaceMenuItem worktreeId={worktree.id} disabled={deletingContext} />
+          ) : null}
           {isMultiContext && hasAnyContextLineage ? (
             <>
               <DropdownMenuItem onSelect={handleRemoveParentLink} disabled={deletingContext}>

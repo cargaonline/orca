@@ -19032,6 +19032,14 @@
           "folderKeptNotEmpty": "Folder kept: it contains files ({{path}})",
           "folderKeptNotOwned": "Folder kept: Orca did not create it ({{path}})",
           "folderKeptFailed": "Folder kept: it could not be removed ({{path}})"
+        },
+        "memberDelete": {
+          "keepsOne": "Only deletes {{name}}. The workspace keeps 1 repo.",
+          "keepsMany": "Only deletes {{name}}. The workspace keeps {{n}} repos."
+        },
+        "removeFromWorkspace": {
+          "done": "{{name}} left {{workspace}}",
+          "undo": "Undo"
         }
       }
     },
