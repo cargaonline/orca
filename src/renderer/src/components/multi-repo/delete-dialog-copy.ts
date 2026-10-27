@@ -82,8 +82,8 @@ export function getRowRiskText(row: DeleteRow): string | null {
     )
   } else if (row.dirtyCount > 0) {
     parts.push(
-      translate('auto.components.multiRepo.delete.dirty', '{{n}} uncommitted files', {
-        n: row.dirtyCount
+      translate('auto.components.multiRepo.delete.dirty', '{{count}} uncommitted files', {
+        count: row.dirtyCount
       })
     )
   }
@@ -95,8 +95,8 @@ export function getRowRiskText(row: DeleteRow): string | null {
     parts.push(
       translate(
         'auto.components.multiRepo.delete.unpublished',
-        '{{n}} unpublished commits on {{branch}}',
-        { n: row.unpublishedCommitCount, branch: row.branchName }
+        '{{count}} unpublished commits on {{branch}}',
+        { count: row.unpublishedCommitCount, branch: row.branchName }
       )
     )
   }

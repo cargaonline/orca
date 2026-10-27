@@ -65,7 +65,7 @@ async function inspectMember(
   const repo = store.getRepos().find((entry) => entry.id === member.repoId)
   const [dirtyCount, unpublishedCommitCount, branchMerged] = await Promise.all([
     readDirtyCount(worktreePath),
-    readUnpublishedCommitCount(worktreePath),
+    readUnpublishedCommitCount(worktreePath, repo?.path, member.baseRef),
     repo ? isBranchMerged(repo.path, member.branchName) : Promise.resolve(null)
   ])
   const preserved = store.getWorktreeMeta(member.worktreeId ?? '')?.preserveBranchOnDelete === true
@@ -192,19 +192,46 @@ async function readDirtyCount(worktreePath: string): Promise<number | null> {
   }
 }
 
-async function readUnpublishedCommitCount(worktreePath: string): Promise<number | null> {
+/** Commits the member added itself: not on any remote and not already in the base it started from. */
+export async function readUnpublishedCommitCount(
+  worktreePath: string,
+  repoPath: string | undefined,
+  baseRef: string | undefined
+): Promise<number | null> {
   try {
+    const base = repoPath ? await resolveBaseCommit(repoPath, baseRef) : null
     const { stdout } = await gitExecFileAsync(
-      ['rev-list', '--count', 'HEAD', '--not', '--remotes'],
-      {
-        cwd: worktreePath
-      }
+      ['rev-list', '--count', 'HEAD', '--not', '--remotes', ...(base ? [base] : [])],
+      { cwd: worktreePath }
     )
     const count = Number.parseInt(stdout.trim(), 10)
     return Number.isFinite(count) ? count : null
   } catch {
     return null
   }
+}
+
+async function resolveBaseCommit(
+  repoPath: string,
+  baseRef: string | undefined
+): Promise<string | null> {
+  for (const ref of [baseRef, 'HEAD']) {
+    if (!ref) {
+      continue
+    }
+    try {
+      const { stdout } = await gitExecFileAsync(
+        ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`],
+        {
+          cwd: repoPath
+        }
+      )
+      return stdout.trim() || null
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  return null
 }
 
 /** Mirrors `git branch -d`: merged into the main checkout's HEAD. Squash merges read as unmerged here. */
