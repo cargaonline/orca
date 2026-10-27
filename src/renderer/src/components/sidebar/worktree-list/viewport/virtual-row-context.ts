@@ -15,6 +15,7 @@ import type { WorktreeSidebarHeaderDrag } from '../drag/use-header-drag'
 import type { WorktreeListVirtualizer } from './use-virtualizer'
 import type { VirtualizedWorktreeViewportProps } from './viewport-props'
 import type { WorktreeVirtualRowContext } from '../rows/virtual-row-dispatch'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 import { collectMultiRepoMemberWorktreeIds } from '@/store/slices/multi-repo-workspace/multi-repo-workspace-selectors'
 import { getRepoOwnerWorktreeVisibilityDefaults } from '../../../../store/worktree-visibility-defaults-by-host'
 
@@ -117,7 +118,7 @@ export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtual
       settings: args.settings,
       groupBy: props.groupBy,
       folderBackedProjectGroupIds: args.folderBackedProjectGroupIds,
-      multiRepoMemberWorktreeIds: collectMultiRepoMemberWorktreeIds(props.folderWorkspaces),
+      multiRepoMemberWorktreeIds: collectMultiRepoMemberWorktreeIds(selectFolderWorkspaces(props)),
       groupKeyByRowKey: session.groupKeyByRowKey,
       groupIndexByRowKey: session.groupIndexByRowKey,
       agentSendTargetWorktreeId: props.agentSendTargetWorktreeId,
