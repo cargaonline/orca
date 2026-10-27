@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
+import { themedStyleSheet } from '../theme/themed-styles'
 import { Check, ChevronDown } from 'lucide-react-native'
 import { BottomDrawer } from '../components/BottomDrawer'
 import { colors, spacing, typography } from '../theme/mobile-theme'
@@ -77,7 +78,7 @@ export function MobileSessionRepoSwitcher({
   )
 }
 
-const localStyles = StyleSheet.create({
+const localStyles = themedStyleSheet(() => ({
   trigger: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 28 },
   title: { flexShrink: 1 },
   heading: {
@@ -94,4 +95,4 @@ const localStyles = StyleSheet.create({
   },
   optionText: { fontSize: typography.bodySize, color: colors.textPrimary },
   pressed: { opacity: 0.7 }
-})
+}))

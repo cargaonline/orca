@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { themedStyleSheet } from '../theme/themed-styles'
 import { colors, spacing, typography } from '../theme/mobile-theme'
 import type { RpcClient } from '../transport/rpc-client'
 import { hostScreenStyles as styles } from '../host-screen/host-screen-styles'
@@ -265,11 +266,11 @@ function SheetButton({
   )
 }
 
-const localStyles = StyleSheet.create({
+const localStyles = themedStyleSheet(() => ({
   centered: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.lg },
   muted: { fontSize: typography.bodySize, color: colors.textSecondary },
   row: { marginTop: spacing.sm, gap: 2 },
   rowName: { fontSize: typography.bodySize, fontWeight: '600', color: colors.textPrimary },
   rowStatus: { fontSize: typography.metaSize, color: colors.textSecondary },
   risky: { color: colors.statusAmber }
-})
+}))

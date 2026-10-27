@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { themedStyleSheet } from '../theme/themed-styles'
 import {
   AlertTriangle,
   Check,
@@ -135,7 +136,7 @@ function MemberRow({
   )
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyleSheet(() => ({
   toggle: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -163,4 +164,4 @@ const styles = StyleSheet.create({
   },
   retryText: { fontSize: 13, color: colors.textPrimary, fontWeight: '600' },
   pressed: { opacity: 0.7 }
-})
+}))
