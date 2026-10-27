@@ -42,6 +42,8 @@ export type Worktree = {
   createdAt?: number
   // Use filesystem basenames to dedupe fallback workspace names.
   path: string
+  /** Older paths of a renamed or moved workspace; older hosts omit it. */
+  priorWorktreeIds?: string[]
   isArchived?: boolean
   isMainWorktree?: boolean
   hasHostSidebarActivity?: boolean
@@ -83,6 +85,8 @@ export type Worktree = {
   linkedItems?: RuntimeWorktreePsSummary['linkedItems']
   comment?: string
   status?: 'working' | 'active' | 'permission' | 'done' | 'inactive'
+  /** Unchecked wire data: a newer host may send a state this build does not know. */
+  sidebarStatus?: string
   workingMode?: AgentWorkingMode
   agents?: RuntimeWorktreeAgentRow[]
 }
