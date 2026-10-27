@@ -38,7 +38,7 @@ beforeEach(() => {
   useAppStore.setState({
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the panel reads only repo ids and names.
     repos: [{ id: 'repo-a', displayName: 'api' }] as never,
-    worktreesByRepo: { 'repo-a': [{ id: 'wt-a' }] } as never,
+    worktreesByRepo: {},
     gitStatusByWorktree: {},
     openModal,
     runMultiRepoMemberAction: runMemberAction
