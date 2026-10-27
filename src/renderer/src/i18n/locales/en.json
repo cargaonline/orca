@@ -18983,6 +18983,29 @@
           "label": "Repos in {{name}}",
           "all": "All",
           "changed": "{{n}} changed"
+        },
+        "root": {
+          "emptyTitle": "No repos in this workspace",
+          "retryAll": "Retry all",
+          "open": "Open {{repo}}",
+          "retry": "Retry",
+          "removeFromWorkspace": "Remove from workspace",
+          "creating": "Creating {{done}}/{{total}}",
+          "repoOne": "1 repo",
+          "repoMany": "{{n}} repos",
+          "failed": "{{n}} failed",
+          "interrupted": "{{n}} interrupted",
+          "missing": "{{n}} missing",
+          "withChanges": "{{n}} with changes",
+          "waiting": "Waiting",
+          "creatingRow": "Creating…",
+          "interruptedRow": "Interrupted",
+          "missingOnDisk": "Missing on disk",
+          "projectRemoved": "Project removed",
+          "failedRow": "Failed",
+          "clean": "Clean",
+          "changed": "{{n}} changed",
+          "notCreated": "{{names}} not created yet. The workspace folder holds only the ready repos."
         }
       }
     },
