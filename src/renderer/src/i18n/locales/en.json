@@ -19042,7 +19042,10 @@
           "force": "Discard changes in {{repo}}",
           "folderKeptNotEmpty": "Folder kept: it contains files ({{path}})",
           "folderKeptNotOwned": "Folder kept: Orca did not create it ({{path}})",
-          "folderKeptFailed": "Folder kept: it could not be removed ({{path}})"
+          "folderKeptFailed": "Folder kept: it could not be removed ({{path}})",
+          "confirm": "Delete workspace and {{count}} worktrees",
+          "dirty": "{{count}} uncommitted files",
+          "unpublished": "{{count}} unpublished commits on {{branch}}"
         },
         "memberDelete": {
           "keepsOne": "Only deletes {{name}}. The workspace keeps 1 repo.",
